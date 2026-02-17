@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useStore } from "@/hooks/useStore";
-import { detectAgents } from "@/lib/tauri";
+import { detectAgents, getSettings } from "@/lib/tauri";
 import type { AgentInfo, AgentProjectInfo } from "@/types/skills";
 import { cn } from "@/lib/utils";
 import {
@@ -15,6 +15,8 @@ import {
   ChevronRight,
   ChevronDown,
   FolderTree,
+  Settings,
+  Search,
 } from "lucide-react";
 
 type SelectedNode =
@@ -27,14 +29,23 @@ export function AgentsPage() {
   const setAgents = useStore((s) => s.setAgents);
   const setIsLoading = useStore((s) => s.setIsLoading);
   const appendCliOutput = useStore((s) => s.appendCliOutput);
+  const agentsScanned = useStore((s) => s.agentsScanned);
+  const agentsScanning = useStore((s) => s.agentsScanning);
+  const setAgentsScanned = useStore((s) => s.setAgentsScanned);
+  const setAgentsScanning = useStore((s) => s.setAgentsScanning);
+  const setCurrentPage = useStore((s) => s.setCurrentPage);
 
-  const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [hasScanRoots, setHasScanRoots] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getSettings().then((s) => setHasScanRoots(s.scan_roots.length > 0)).catch(() => setHasScanRoots(false));
+  }, []);
 
   const loadAgents = useCallback(async () => {
-    setLoading(true);
+    setAgentsScanning(true);
     setIsLoading(true);
     try {
       const result = await detectAgents();
@@ -44,13 +55,16 @@ export function AgentsPage() {
     } catch (err) {
       appendCliOutput(`Error detecting agents: ${err}`);
     } finally {
-      setLoading(false);
+      setAgentsScanning(false);
+      setAgentsScanned(true);
       setIsLoading(false);
     }
-  }, [setAgents, setIsLoading, appendCliOutput]);
+  }, [setAgents, setIsLoading, appendCliOutput, setAgentsScanned, setAgentsScanning]);
 
-  useEffect(() => {
-    loadAgents();
+  const handleRefresh = useCallback(() => {
+    if (window.confirm("重新掃描將花費一些時間，確定要繼續嗎？")) {
+      loadAgents();
+    }
   }, [loadAgents]);
 
   const toggleAgent = (agentId: string) => {
@@ -84,6 +98,54 @@ export function AgentsPage() {
     ? agents.find((a) => a.id === selectedNode.agentId)
     : null;
 
+  if (!agentsScanned && agents.length === 0 && !agentsScanning) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center max-w-md space-y-4">
+          <Bot className="h-12 w-12 text-muted-foreground/40 mx-auto" />
+          <h2 className="text-lg font-semibold">掃描 Agents</h2>
+          {hasScanRoots === false ? (
+            <p className="text-sm text-muted-foreground">
+              尚未配置掃描目錄，請先前往設定頁新增要掃描的目錄。
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              請先在設定頁配置要掃描的目錄，然後點擊「開始掃描」來偵測系統中的 Agents。掃描可能需要一些時間。
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setCurrentPage("settings")}
+              className="inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-sm hover:bg-accent transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              前往設定
+            </button>
+            <button
+              onClick={() => {
+                if (hasScanRoots === false) {
+                  window.alert("請先在設定頁配置掃描目錄後再執行掃描。");
+                  return;
+                }
+                loadAgents();
+              }}
+              disabled={hasScanRoots === false}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm transition-colors",
+                hasScanRoots === false
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
+            >
+              <Search className="h-4 w-4" />
+              開始掃描
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full">
       {/* Agent Tree */}
@@ -96,18 +158,19 @@ export function AgentsPage() {
             </p>
           </div>
           <button
-            onClick={loadAgents}
-            disabled={loading}
+            onClick={handleRefresh}
+            disabled={agentsScanning}
             className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs hover:bg-accent transition-colors"
           >
-            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+            <RefreshCw className={cn("h-3 w-3", agentsScanning && "animate-spin")} />
             Refresh
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
+        {agentsScanning ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">正在掃描目錄中...</p>
           </div>
         ) : (
           <div className="space-y-6">

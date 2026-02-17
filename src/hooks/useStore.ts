@@ -9,6 +9,8 @@ interface AppState {
   cliOutput: string[];
   isLoading: boolean;
   currentPage: string;
+  agentsScanned: boolean;
+  agentsScanning: boolean;
 
   setSkills: (skills: Skill[]) => void;
   setAgents: (agents: AgentInfo[]) => void;
@@ -18,6 +20,8 @@ interface AppState {
   clearCliOutput: () => void;
   setIsLoading: (loading: boolean) => void;
   setCurrentPage: (page: string) => void;
+  setAgentsScanned: (scanned: boolean) => void;
+  setAgentsScanning: (scanning: boolean) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -28,6 +32,8 @@ export const useStore = create<AppState>((set) => ({
   cliOutput: [],
   isLoading: false,
   currentPage: "skills",
+  agentsScanned: false,
+  agentsScanning: false,
 
   setSkills: (skills) => set({ skills }),
   setAgents: (agents) => set({ agents }),
@@ -38,4 +44,6 @@ export const useStore = create<AppState>((set) => ({
   clearCliOutput: () => set({ cliOutput: [] }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setCurrentPage: (page) => set({ currentPage: page }),
+  setAgentsScanned: (scanned) => set({ agentsScanned: scanned }),
+  setAgentsScanning: (scanning) => set({ agentsScanning: scanning }),
 }));

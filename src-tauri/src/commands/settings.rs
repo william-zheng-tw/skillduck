@@ -9,13 +9,8 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         Settings {
-            scan_roots: vec![
-                home.join("Documents").to_string_lossy().to_string(),
-                home.join("Projects").to_string_lossy().to_string(),
-                home.join("Code").to_string_lossy().to_string(),
-            ],
+            scan_roots: vec![],
         }
     }
 }
