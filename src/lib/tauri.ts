@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { Skill, AgentInfo, CliOutput, ValidationResult, SandboxInfo, ScriptOutput } from "@/types/skills";
+import type { Skill, AgentInfo, CliOutput, ValidationResult, SandboxInfo, ScriptOutput, Settings } from "@/types/skills";
 
 // === Direct Rust operations (fast) ===
 
@@ -12,8 +12,16 @@ export async function parseSkillMd(path: string): Promise<Skill> {
   return invoke<Skill>("parse_skill_md", { path });
 }
 
-export async function detectAgents(): Promise<AgentInfo[]> {
-  return invoke<AgentInfo[]>("detect_agents");
+export async function detectAgents(scanRoots?: string[]): Promise<AgentInfo[]> {
+  return invoke<AgentInfo[]>("detect_agents", { scanRoots: scanRoots || null });
+}
+
+export async function getSettings(): Promise<Settings> {
+  return invoke<Settings>("get_settings");
+}
+
+export async function saveSettings(settings: Settings): Promise<void> {
+  return invoke<void>("save_settings", { settings });
 }
 
 export async function validateSkill(path: string): Promise<ValidationResult> {
@@ -128,4 +136,41 @@ export function onCliOutput(callback: (line: string) => void): Promise<UnlistenF
   return listen<string>("cli-output", (event) => {
     callback(event.payload);
   });
+}
+
+// === Skills.sh Search API ===
+
+export interface SkillSearchResult {
+  id: string;              // 完整路徑 "owner/repo/skill-name"
+  skillId: string;         // skill 名稱
+  name: string;            // 顯示名稱
+  installs: number;        // 真實安裝數
+  source: string;          // "owner/repo"
+}
+
+export interface SearchSkillsResponse {
+  query: string;
+  searchType: string;
+  skills: SkillSearchResult[];
+  count: number;
+  duration_ms: number;
+}
+
+export async function searchSkills(
+  query: string, 
+  limit = 10
+): Promise<SearchSkillsResponse> {
+  const { fetch } = await import("@tauri-apps/plugin-http");
+  
+  const url = `https://skills.sh/api/search?q=${encodeURIComponent(query)}&limit=${limit}`;
+  const response = await fetch(url, {
+    method: "GET",
+    connectTimeout: 10000,
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Search API error: ${response.status}`);
+  }
+  
+  return response.json();
 }

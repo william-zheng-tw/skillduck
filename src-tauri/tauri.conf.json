@@ -20,7 +20,28 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "capabilities": [
+        {
+          "identifier": "main-capability",
+          "windows": ["main"],
+          "permissions": [
+            "core:default",
+            "shell:default",
+            "dialog:default",
+            "opener:default",
+            "http:default",
+            {
+              "identifier": "http:allow-fetch",
+              "allow": [
+                {
+                  "url": "https://skills.sh/api/*"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   },
   "bundle": {

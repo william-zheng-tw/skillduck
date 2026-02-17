@@ -1,103 +1,173 @@
-import { useStore } from "@/hooks/useStore";
-import { Settings, Terminal, Info, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getSettings, saveSettings } from "@/lib/tauri";
+import type { Settings } from "@/types/skills";
+import { FolderOpen, Plus, Trash2, Save, Loader2 } from "lucide-react";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { cn } from "@/lib/utils";
 
 export function SettingsPage() {
-  const cliOutput = useStore((s) => s.cliOutput);
-  const clearCliOutput = useStore((s) => s.clearCliOutput);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    setLoading(true);
+    try {
+      const result = await getSettings();
+      setSettings(result);
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+      setSettings({ scan_roots: [] });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!settings) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      await saveSettings(settings);
+      setMessage("Settings saved successfully!");
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      setMessage(`Failed to save settings: ${err}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addScanRoot = async () => {
+    const selected = await openDialog({
+      directory: true,
+      multiple: false,
+      title: "Select directory to scan",
+    });
+
+    if (selected && typeof selected === "string") {
+      setSettings((prev) => {
+        if (!prev) return { scan_roots: [selected] };
+        if (prev.scan_roots.includes(selected)) return prev;
+        return { ...prev, scan_roots: [...prev.scan_roots, selected] };
+      });
+    }
+  };
+
+  const removeScanRoot = (index: number) => {
+    setSettings((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        scan_roots: prev.scan_roots.filter((_, i) => i !== index),
+      };
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-2 mb-6">
-          <Settings className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Settings</h2>
-        </div>
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold">Settings</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Configure project scanning and other preferences
+        </p>
+      </div>
 
-        <div className="space-y-6">
-          {/* About */}
-          <section className="rounded-xl border bg-card p-5">
-            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-              <Info className="h-4 w-4 text-primary" />
-              About Skills Dashboard
-            </h3>
-            <div className="space-y-2 text-xs text-muted-foreground">
-              <p>
-                Visual GUI for managing Agent Skills following the{" "}
-                <a
-                  href="https://agentskills.io/specification"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  agentskills.io specification
-                </a>
-                .
+      <div className="space-y-6">
+        {/* Scan Roots Section */}
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-sm font-medium">Project Scan Directories</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Directories to scan for agent projects
               </p>
-              <p>
-                Built on{" "}
-                <a
-                  href="https://github.com/vercel-labs/skills"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  vercel-labs/skills
-                </a>{" "}
-                CLI.
-              </p>
-              <div className="flex items-center gap-3 mt-3">
-                <span className="bg-secondary px-2 py-1 rounded text-[10px] font-mono">v0.1.0</span>
-                <span className="bg-secondary px-2 py-1 rounded text-[10px] font-mono">Tauri 2.0</span>
-                <span className="bg-secondary px-2 py-1 rounded text-[10px] font-mono">React 19</span>
-              </div>
             </div>
-          </section>
+            <button
+              onClick={addScanRoot}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+              Add Directory
+            </button>
+          </div>
 
-          {/* Links */}
-          <section className="rounded-xl border bg-card p-5">
-            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-primary" />
-              Resources
-            </h3>
+          {settings && settings.scan_roots.length > 0 ? (
             <div className="space-y-2">
-              {[
-                { label: "Agent Skills Specification", url: "https://agentskills.io" },
-                { label: "Skills Directory", url: "https://skills.sh" },
-                { label: "vercel-labs/skills CLI", url: "https://github.com/vercel-labs/skills" },
-                { label: "vercel-labs/agent-skills", url: "https://github.com/vercel-labs/agent-skills" },
-              ].map((link) => (
-                <a
-                  key={link.url}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs text-primary hover:underline"
+              {settings.scan_roots.map((root, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 rounded border bg-card px-3 py-2"
                 >
-                  <ExternalLink className="h-3 w-3" />
-                  {link.label}
-                </a>
+                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                  <code className="flex-1 text-xs font-mono">{root}</code>
+                  <button
+                    onClick={() => removeScanRoot(index)}
+                    className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
               ))}
             </div>
-          </section>
-
-          {/* CLI Output Log */}
-          <section className="rounded-xl border bg-card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Terminal className="h-4 w-4 text-primary" />
-                CLI Output Log
-              </h3>
-              <button
-                onClick={clearCliOutput}
-                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Clear
-              </button>
+          ) : (
+            <div className="text-center py-6 text-sm text-muted-foreground">
+              No scan directories configured. Add directories to scan for agent
+              projects.
             </div>
-            <pre className="max-h-60 overflow-y-auto rounded-lg bg-secondary/30 p-3 text-[11px] font-mono text-muted-foreground whitespace-pre-wrap">
-              {cliOutput.length > 0 ? cliOutput.join("\n") : "No output yet."}
-            </pre>
-          </section>
+          )}
+        </div>
+
+        {/* Save Button */}
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex-1">
+            {message && (
+              <p
+                className={cn(
+                  "text-xs",
+                  message.includes("success")
+                    ? "text-success"
+                    : "text-destructive"
+                )}
+              >
+                {message}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving || !settings}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors",
+              "bg-primary text-primary-foreground hover:bg-primary/90",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Settings
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

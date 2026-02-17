@@ -38,7 +38,7 @@ export function SkillDetail({ skill, onRemove }: SkillDetailProps) {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="h-full overflow-y-auto overflow-x-hidden p-6">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export function SkillDetail({ skill, onRemove }: SkillDetailProps) {
       {skill.body && (
         <div className="mt-6">
           <h3 className="text-sm font-medium mb-2">Instructions</h3>
-          <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-card p-4">
+          <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-card p-4 break-words overflow-hidden [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_code]:break-all">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{skill.body}</ReactMarkdown>
           </div>
         </div>

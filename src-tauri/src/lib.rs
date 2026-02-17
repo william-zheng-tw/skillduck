@@ -6,6 +6,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![
             // Skills
             commands::skills::list_skills,
@@ -32,6 +33,9 @@ pub fn run() {
             // Watcher
             commands::watcher::watch_skills_dir,
             commands::watcher::unwatch_skills_dir,
+            // Settings
+            commands::settings::get_settings,
+            commands::settings::save_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

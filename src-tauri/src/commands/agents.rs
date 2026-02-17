@@ -11,13 +11,24 @@ pub struct AgentDefinition {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AgentGlobalInfo {
+    pub path: String,
+    pub skills: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AgentProjectInfo {
+    pub path: String,
+    pub skills: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AgentInfo {
     pub id: String,
     pub display_name: String,
-    pub project_path: String,
-    pub global_path: String,
     pub detected: bool,
-    pub installed_skills: Vec<String>,
+    pub global: AgentGlobalInfo,
+    pub projects: Vec<AgentProjectInfo>,
 }
 
 pub fn get_agent_definitions() -> Vec<AgentDefinition> {
@@ -178,32 +189,102 @@ fn detect_agent_presence(home: &PathBuf, agent: &AgentDefinition) -> bool {
     config_indicators.iter().any(|p| p.exists())
 }
 
+fn scan_for_projects(agent: &AgentDefinition, scan_roots: &[PathBuf]) -> Vec<AgentProjectInfo> {
+    let mut projects = Vec::new();
+    let mut seen_paths = std::collections::HashSet::new();
+
+    for root in scan_roots {
+        if !root.exists() {
+            continue;
+        }
+
+        for entry in WalkDir::new(root)
+            .follow_links(true)
+            .into_iter()
+            .filter_entry(|e| {
+                // Skip common directories that won't contain agent configs
+                if let Some(name) = e.file_name().to_str() {
+                    !matches!(
+                        name,
+                        "node_modules" | ".git" | "target" | "dist" | "build" | 
+                        ".next" | ".nuxt" | ".venv" | "venv" | "__pycache__" |
+                        ".cache" | "vendor" | "bower_components"
+                    )
+                } else {
+                    true
+                }
+            })
+            .filter_map(|e| e.ok())
+        {
+            let path = entry.path();
+            
+            // Check if this path ends with the agent's project_path
+            if path.is_dir() && path.to_string_lossy().ends_with(&agent.project_path) {
+                // Get the project root (parent of the agent's skills directory)
+                if let Some(project_root) = path.parent() {
+                    let project_root_str = project_root.to_string_lossy().to_string();
+                    
+                    // Skip if we've already seen this project
+                    if !seen_paths.insert(project_root_str.clone()) {
+                        continue;
+                    }
+
+                    let skills = find_skills_in_dir(&path.to_path_buf());
+                    
+                    // Only add if there are skills
+                    if !skills.is_empty() {
+                        projects.push(AgentProjectInfo {
+                            path: project_root_str,
+                            skills,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Sort by path for consistent ordering
+    projects.sort_by(|a, b| a.path.cmp(&b.path));
+    projects
+}
+
 #[tauri::command]
-pub fn detect_agents() -> Result<Vec<AgentInfo>, String> {
+pub fn detect_agents(scan_roots: Option<Vec<String>>) -> Result<Vec<AgentInfo>, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let definitions = get_agent_definitions();
+
+    // Convert scan_roots to PathBuf, or use settings
+    let scan_paths: Vec<PathBuf> = if let Some(roots) = scan_roots {
+        roots.iter().map(|r| PathBuf::from(r)).collect()
+    } else {
+        // Try to load from settings, or use defaults
+        let settings = super::settings::get_settings().unwrap_or_default();
+        settings.scan_roots.iter().map(|r| PathBuf::from(r)).collect()
+    };
 
     let mut agents = Vec::new();
 
     for def in &definitions {
         let detected = detect_agent_presence(&home, def);
 
-        let mut installed_skills = Vec::new();
+        // Scan global path
         let global_path = home.join(&def.global_path);
-        installed_skills.extend(find_skills_in_dir(&global_path));
-        let project_path = cwd.join(&def.project_path);
-        installed_skills.extend(find_skills_in_dir(&project_path));
-        installed_skills.sort();
-        installed_skills.dedup();
+        let global_skills = find_skills_in_dir(&global_path);
+        
+        let global = AgentGlobalInfo {
+            path: global_path.to_string_lossy().to_string(),
+            skills: global_skills,
+        };
+
+        // Scan projects
+        let projects = scan_for_projects(def, &scan_paths);
 
         agents.push(AgentInfo {
             id: def.id.clone(),
             display_name: def.display_name.clone(),
-            project_path: cwd.join(&def.project_path).to_string_lossy().to_string(),
-            global_path: home.join(&def.global_path).to_string_lossy().to_string(),
             detected,
-            installed_skills,
+            global,
+            projects,
         });
     }
 

@@ -19,8 +19,8 @@ const navItems: NavItem[] = [
   { id: "skills", label: "My Skills", icon: Boxes },
   { id: "explore", label: "Explore", icon: Compass },
   { id: "agents", label: "Agents", icon: Bot },
-  { id: "editor", label: "Editor", icon: FileEdit },
-  { id: "sandbox", label: "Sandbox", icon: FlaskConical },
+  // { id: "editor", label: "Editor", icon: FileEdit },
+  // { id: "sandbox", label: "Sandbox", icon: FlaskConical },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 

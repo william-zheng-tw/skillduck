@@ -21,13 +21,26 @@ export interface Skill {
   body: string;
 }
 
+export interface AgentGlobalInfo {
+  path: string;
+  skills: string[];
+}
+
+export interface AgentProjectInfo {
+  path: string;
+  skills: string[];
+}
+
 export interface AgentInfo {
   id: string;
   display_name: string;
-  project_path: string;
-  global_path: string;
   detected: boolean;
-  installed_skills: string[];
+  global: AgentGlobalInfo;
+  projects: AgentProjectInfo[];
+}
+
+export interface Settings {
+  scan_roots: string[];
 }
 
 export interface CliOutput {
