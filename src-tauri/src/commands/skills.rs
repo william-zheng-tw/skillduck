@@ -77,7 +77,7 @@ pub fn scan_directory_for_skills(base_path: &Path, scope: &str, agent_id: &str) 
         return skills;
     }
 
-    for entry in WalkDir::new(base_path).max_depth(4).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(base_path).follow_links(true).max_depth(4).into_iter().filter_map(|e| e.ok()) {
         if entry.file_name() == "SKILL.md" {
             if let Ok(content) = fs::read_to_string(entry.path()) {
                 if let Some((fm, body)) = parse_skill_md_content(&content) {

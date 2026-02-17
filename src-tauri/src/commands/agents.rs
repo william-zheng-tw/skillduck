@@ -138,7 +138,7 @@ fn find_skills_in_dir(dir: &PathBuf) -> Vec<String> {
     if !dir.exists() {
         return names;
     }
-    for entry in WalkDir::new(dir).max_depth(3).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(dir).follow_links(true).max_depth(3).into_iter().filter_map(|e| e.ok()) {
         if entry.file_name() == "SKILL.md" {
             if let Some(parent) = entry.path().parent() {
                 if let Some(name) = parent.file_name() {
