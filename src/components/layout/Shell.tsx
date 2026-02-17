@@ -10,6 +10,7 @@ export function Shell({ children }: ShellProps) {
     <div className="flex h-screen w-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
+        <div data-tauri-drag-region className="h-8 shrink-0" />
         <main className="flex-1 overflow-y-auto">{children}</main>
         <StatusBar />
       </div>

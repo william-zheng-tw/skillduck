@@ -192,7 +192,7 @@ export function AgentsPage() {
         <div className="flex h-full items-center justify-center">
           <div className="text-center max-w-md space-y-4">
             <Bot className="h-12 w-12 text-muted-foreground/40 mx-auto" />
-            <h2 className="text-lg font-semibold">Scan Agents</h2>
+            <h2 className="text-lg font-semibold">Scan Agent Skills</h2>
             {hasScanRoots === false ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
@@ -237,7 +237,7 @@ export function AgentsPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold">Agents</h2>
+            <h2 className="text-lg font-semibold">Agent Skills</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               {detected.length} agents detected on this system
             </p>

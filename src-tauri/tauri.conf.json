@@ -16,7 +16,8 @@
         "width": 1200,
         "height": 800,
         "minWidth": 900,
-        "minHeight": 600
+        "minHeight": 600,
+        "titleBarStyle": "Overlay"
       }
     ],
     "security": {
@@ -27,6 +28,7 @@
           "windows": ["main"],
           "permissions": [
             "core:default",
+            "core:window:allow-start-dragging",
             "shell:default",
             "dialog:default",
             "opener:default",

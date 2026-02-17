@@ -4,8 +4,6 @@ import {
   Boxes,
   Compass,
   Bot,
-  FileEdit,
-  FlaskConical,
   Settings,
 } from "lucide-react";
 
@@ -18,7 +16,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: "skills", label: "My Skills", icon: Boxes },
   { id: "explore", label: "Explore", icon: Compass },
-  { id: "agents", label: "Agents", icon: Bot },
+  { id: "agents", label: "Agent Skills", icon: Bot },
   // { id: "editor", label: "Editor", icon: FileEdit },
   // { id: "sandbox", label: "Sandbox", icon: FlaskConical },
   { id: "settings", label: "Settings", icon: Settings },
@@ -34,7 +32,7 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full w-56 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-4 py-4">
+      <div data-tauri-drag-region className="flex items-center gap-2 border-b border-sidebar-border px-4 pt-8 pb-4">
         <Boxes className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-sm font-bold leading-tight">Skills</h1>

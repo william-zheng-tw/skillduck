@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/hooks/useStore";
 import { cliAddSkill, searchSkills, type SkillSearchResult } from "@/lib/tauri";
-import { cn } from "@/lib/utils";
 import {
   Search,
   Download,
