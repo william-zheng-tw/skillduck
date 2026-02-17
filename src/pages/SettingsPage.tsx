@@ -125,8 +125,9 @@ export function SettingsPage() {
             </div>
           ) : (
             <div className="text-center py-6 text-sm text-muted-foreground">
-              No scan directories configured. Add directories to scan for agent
-              projects.
+              No scan directories configured. Add directories to scan for
+              project-level skills. Global agents will still be detected without
+              this setting.
             </div>
           )}
         </div>

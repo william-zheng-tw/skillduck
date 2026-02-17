@@ -4,6 +4,7 @@ import { detectAgents, getSettings } from "@/lib/tauri";
 import type { AgentInfo, AgentProjectInfo } from "@/types/skills";
 import { cn } from "@/lib/utils";
 import {
+  AlertTriangle,
   Bot,
   RefreshCw,
   CheckCircle2,
@@ -18,6 +19,11 @@ import {
   Settings,
   Search,
 } from "lucide-react";
+
+type DialogState =
+  | null
+  | { type: "alert"; message: string; dismissible?: boolean }
+  | { type: "confirm-refresh" };
 
 type SelectedNode =
   | { type: "agent"; agentId: string }
@@ -34,17 +40,31 @@ export function AgentsPage() {
   const setAgentsScanned = useStore((s) => s.setAgentsScanned);
   const setAgentsScanning = useStore((s) => s.setAgentsScanning);
   const setCurrentPage = useStore((s) => s.setCurrentPage);
+  const dismissNoScanRootsAlert = useStore((s) => s.dismissNoScanRootsAlert);
+  const setDismissNoScanRootsAlert = useStore((s) => s.setDismissNoScanRootsAlert);
 
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [hasScanRoots, setHasScanRoots] = useState<boolean | null>(null);
+  const [dialog, setDialog] = useState<DialogState>(null);
 
   useEffect(() => {
     getSettings().then((s) => setHasScanRoots(s.scan_roots.length > 0)).catch(() => setHasScanRoots(false));
   }, []);
 
   const loadAgents = useCallback(async () => {
+    let noScanRoots = false;
+    try {
+      const settings = await getSettings();
+      noScanRoots = settings.scan_roots.length === 0;
+      setHasScanRoots(!noScanRoots);
+    } catch {
+      setDialog({ type: "alert", message: "Failed to load settings. Please try again later." });
+      return;
+    }
+
+    setAgents([]);
     setAgentsScanning(true);
     setIsLoading(true);
     try {
@@ -58,14 +78,19 @@ export function AgentsPage() {
       setAgentsScanning(false);
       setAgentsScanned(true);
       setIsLoading(false);
+      if (noScanRoots && !useStore.getState().dismissNoScanRootsAlert) {
+        setDialog({
+          type: "alert",
+          message: "No scan directories configured. Only global agents were detected. To scan project-level skills, please configure directories in Settings.",
+          dismissible: true,
+        });
+      }
     }
   }, [setAgents, setIsLoading, appendCliOutput, setAgentsScanned, setAgentsScanning]);
 
   const handleRefresh = useCallback(() => {
-    if (window.confirm("重新掃描將花費一些時間，確定要繼續嗎？")) {
-      loadAgents();
-    }
-  }, [loadAgents]);
+    setDialog({ type: "confirm-refresh" });
+  }, []);
 
   const toggleAgent = (agentId: string) => {
     setExpandedAgents((prev) => {
@@ -98,55 +123,115 @@ export function AgentsPage() {
     ? agents.find((a) => a.id === selectedNode.agentId)
     : null;
 
+  const dialogOverlay = dialog && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-[420px] rounded-xl border bg-card p-6 shadow-lg">
+        {dialog.type === "alert" && (
+          <>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <h3 className="text-base font-semibold">Notice</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">{dialog.message}</p>
+            {dialog.dismissible && (
+              <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={dismissNoScanRootsAlert}
+                  onChange={(e) => setDismissNoScanRootsAlert(e.target.checked)}
+                  className="rounded border-border"
+                />
+                <span className="text-xs text-muted-foreground">Don't show this again</span>
+              </label>
+            )}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setDialog(null)}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </>
+        )}
+        {dialog.type === "confirm-refresh" && (
+          <>
+            <div className="flex items-center gap-2 mb-3">
+              <RefreshCw className="h-5 w-5 text-primary" />
+              <h3 className="text-base font-semibold">Rescan</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Rescanning may take a while. Are you sure you want to continue?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDialog(null)}
+                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setDialog(null);
+                  loadAgents();
+                }}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Start Scan
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   if (!agentsScanned && agents.length === 0 && !agentsScanning) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center max-w-md space-y-4">
-          <Bot className="h-12 w-12 text-muted-foreground/40 mx-auto" />
-          <h2 className="text-lg font-semibold">掃描 Agents</h2>
-          {hasScanRoots === false ? (
-            <p className="text-sm text-muted-foreground">
-              尚未配置掃描目錄，請先前往設定頁新增要掃描的目錄。
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              請先在設定頁配置要掃描的目錄，然後點擊「開始掃描」來偵測系統中的 Agents。掃描可能需要一些時間。
-            </p>
-          )}
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <button
-              onClick={() => setCurrentPage("settings")}
-              className="inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-sm hover:bg-accent transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              前往設定
-            </button>
-            <button
-              onClick={() => {
-                if (hasScanRoots === false) {
-                  window.alert("請先在設定頁配置掃描目錄後再執行掃描。");
-                  return;
-                }
-                loadAgents();
-              }}
-              disabled={hasScanRoots === false}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm transition-colors",
-                hasScanRoots === false
-                  ? "bg-muted text-muted-foreground cursor-not-allowed"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-              )}
-            >
-              <Search className="h-4 w-4" />
-              開始掃描
-            </button>
+      <>
+        <div className="flex h-full items-center justify-center">
+          <div className="text-center max-w-md space-y-4">
+            <Bot className="h-12 w-12 text-muted-foreground/40 mx-auto" />
+            <h2 className="text-lg font-semibold">Scan Agents</h2>
+            {hasScanRoots === false ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  No scan directories configured. Global agent detection will still work, but project-level skills won't be scanned.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  To scan project-level skills, please go to Settings and add directories first.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Click "Start Scan" to detect agents on your system. Global agents are always detected. Project-level skills will be scanned from directories configured in Settings. Scanning may take a while.
+              </p>
+            )}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setCurrentPage("settings")}
+                className="inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                <Settings className="h-4 w-4" />
+                Go to Settings
+              </button>
+              <button
+                onClick={loadAgents}
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90 transition-colors"
+              >
+                <Search className="h-4 w-4" />
+                Start Scan
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+        {dialogOverlay}
+      </>
     );
   }
 
   return (
+    <>
     <div className="flex h-full">
       {/* Agent Tree */}
       <div className="flex-1 overflow-y-auto p-6">
@@ -170,7 +255,7 @@ export function AgentsPage() {
         {agentsScanning ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">正在掃描目錄中...</p>
+            <p className="text-sm text-muted-foreground">Scanning directories...</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -226,6 +311,8 @@ export function AgentsPage() {
         <DetailPanel agent={selectedAgent} selectedNode={selectedNode} />
       )}
     </div>
+    {dialogOverlay}
+    </>
   );
 }
 
@@ -277,15 +364,15 @@ function AgentTreeNode({
         </button>
         <Bot className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium flex-1">{agent.display_name}</span>
-        {agent.detected ? (
-          <CheckCircle2 className="h-4 w-4 text-success" />
-        ) : (
-          <XCircle className="h-4 w-4 text-muted-foreground/40" />
-        )}
         {totalSkills > 0 && (
           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
             {totalSkills}
           </span>
+        )}
+        {agent.detected ? (
+          <CheckCircle2 className="h-4 w-4 text-success" />
+        ) : (
+          <XCircle className="h-4 w-4 text-muted-foreground/40" />
         )}
       </div>
 

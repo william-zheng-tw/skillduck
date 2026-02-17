@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Skill, AgentInfo } from "@/types/skills";
+import { detectAgents } from "@/lib/tauri";
 
 interface AppState {
   skills: Skill[];
@@ -23,6 +24,9 @@ interface AppState {
   setCurrentPage: (page: string) => void;
   setAgentsScanned: (scanned: boolean) => void;
   setAgentsScanning: (scanning: boolean) => void;
+  initGlobalAgents: () => Promise<void>;
+  dismissNoScanRootsAlert: boolean;
+  setDismissNoScanRootsAlert: (v: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -49,12 +53,23 @@ export const useStore = create<AppState>()(
       setCurrentPage: (page) => set({ currentPage: page }),
       setAgentsScanned: (scanned) => set({ agentsScanned: scanned }),
       setAgentsScanning: (scanning) => set({ agentsScanning: scanning }),
+      dismissNoScanRootsAlert: false,
+      setDismissNoScanRootsAlert: (v) => set({ dismissNoScanRootsAlert: v }),
+      initGlobalAgents: async () => {
+        try {
+          const result = await detectAgents([]);
+          set({ agents: result });
+        } catch {
+          // silently fail — global scan is best-effort
+        }
+      },
     }),
     {
       name: "skills-dashboard-store",
       partialize: (state) => ({
         agents: state.agents,
         agentsScanned: state.agentsScanned,
+        dismissNoScanRootsAlert: state.dismissNoScanRootsAlert,
       }),
     }
   )

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { useStore } from "@/hooks/useStore";
 import { SkillsPage } from "@/pages/SkillsPage";
@@ -39,6 +40,12 @@ function PageRouter() {
 }
 
 function App() {
+  const initGlobalAgents = useStore((s) => s.initGlobalAgents);
+
+  useEffect(() => {
+    initGlobalAgents();
+  }, [initGlobalAgents]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Shell>
