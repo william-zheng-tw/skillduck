@@ -46,21 +46,40 @@ export async function getSkillsDirectories(): Promise<{ project: string[]; globa
 
 // === CLI Bridge operations ===
 
-export async function cliAddSkill(
-  source: string,
-  agents: string[],
-  skills: string[],
-  global: boolean
-): Promise<CliOutput> {
-  return invoke<CliOutput>("cli_add_skill", { source, agents, skills, global: global });
+export interface AddSkillOptions {
+  source: string;
+  agents: string[];
+  skills: string[];
+  global: boolean;
+  listOnly: boolean;
+  all: boolean;
+  projectPath?: string;
+}
+
+export async function cliAddSkill(opts: AddSkillOptions): Promise<CliOutput> {
+  return invoke<CliOutput>("cli_add_skill", {
+    source: opts.source,
+    agents: opts.agents,
+    skills: opts.skills,
+    global: opts.global,
+    listOnly: opts.listOnly,
+    all: opts.all,
+    projectPath: opts.projectPath || null,
+  });
 }
 
 export async function cliRemoveSkill(
   skillNames: string[],
   agents: string[],
-  global: boolean
+  global: boolean,
+  projectPath?: string
 ): Promise<CliOutput> {
-  return invoke<CliOutput>("cli_remove_skill", { skillNames, agents, global: global });
+  return invoke<CliOutput>("cli_remove_skill", {
+    skillNames,
+    agents,
+    global: global,
+    projectPath: projectPath || null,
+  });
 }
 
 export async function cliCheckUpdates(): Promise<CliOutput> {

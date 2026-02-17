@@ -21,7 +21,7 @@ fn find_npx() -> String {
     "npx".to_string()
 }
 
-async fn run_skills_command(args: Vec<String>) -> Result<CliOutput, String> {
+async fn run_skills_command(args: Vec<String>, cwd: Option<String>) -> Result<CliOutput, String> {
     let npx = find_npx();
 
     let mut cmd = AsyncCommand::new(&npx);
@@ -30,6 +30,12 @@ async fn run_skills_command(args: Vec<String>) -> Result<CliOutput, String> {
         cmd.arg(arg);
     }
     cmd.arg("-y"); // non-interactive
+
+    if let Some(ref dir) = cwd {
+        if !dir.is_empty() {
+            cmd.current_dir(dir);
+        }
+    }
 
     // Inherit PATH so npx/node can be found
     if let Ok(path) = std::env::var("PATH") {
@@ -56,6 +62,9 @@ pub async fn cli_add_skill(
     agents: Vec<String>,
     skills: Vec<String>,
     global: bool,
+    list_only: bool,
+    all: bool,
+    project_path: Option<String>,
 ) -> Result<CliOutput, String> {
     let mut args = vec!["add".to_string(), source];
 
@@ -70,8 +79,16 @@ pub async fn cli_add_skill(
     if global {
         args.push("-g".to_string());
     }
+    if list_only {
+        args.push("--list".to_string());
+    }
+    if all {
+        args.push("--all".to_string());
+    }
 
-    run_skills_command(args).await
+    // For project scope, run CLI in the specified project directory
+    let cwd = if !global { project_path } else { None };
+    run_skills_command(args, cwd).await
 }
 
 #[tauri::command]
@@ -79,6 +96,7 @@ pub async fn cli_remove_skill(
     skill_names: Vec<String>,
     agents: Vec<String>,
     global: bool,
+    project_path: Option<String>,
 ) -> Result<CliOutput, String> {
     let mut args = vec!["remove".to_string()];
     args.extend(skill_names);
@@ -91,17 +109,18 @@ pub async fn cli_remove_skill(
         args.push("-g".to_string());
     }
 
-    run_skills_command(args).await
+    let cwd = if !global { project_path } else { None };
+    run_skills_command(args, cwd).await
 }
 
 #[tauri::command]
 pub async fn cli_check_updates() -> Result<CliOutput, String> {
-    run_skills_command(vec!["check".to_string()]).await
+    run_skills_command(vec!["check".to_string()], None).await
 }
 
 #[tauri::command]
 pub async fn cli_update_skills() -> Result<CliOutput, String> {
-    run_skills_command(vec!["update".to_string()]).await
+    run_skills_command(vec!["update".to_string()], None).await
 }
 
 #[tauri::command]

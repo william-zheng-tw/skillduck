@@ -90,7 +90,14 @@ export function ExplorePage() {
     setInstalling(skill.name);
     setIsLoading(true);
     try {
-      const result = await cliAddSkill(skill.source, [], [skill.name], false);
+      const result = await cliAddSkill({
+        source: skill.source,
+        agents: [],
+        skills: [skill.name],
+        global: false,
+        listOnly: false,
+        all: false,
+      });
       appendCliOutput(result.stdout);
       if (result.stderr) appendCliOutput(result.stderr);
       appendCliOutput(`Successfully installed ${skill.name}`);
