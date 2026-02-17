@@ -42,7 +42,7 @@ export function SkillsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [addSource, setAddSource] = useState("");
-  const [addGlobal, setAddGlobal] = useState(false);
+  const [addGlobal, setAddGlobal] = useState(true);
   const [addAgents, setAddAgents] = useState<string[]>([]);
   const [addSkillNames, setAddSkillNames] = useState("");
   const [addListOnly, setAddListOnly] = useState(false);
@@ -98,7 +98,7 @@ export function SkillsPage() {
 
   const resetAddDialog = () => {
     setAddSource("");
-    setAddGlobal(false);
+    setAddGlobal(true);
     setAddProjectPath("");
     setAddAgents([]);
     setAddSkillNames("");
@@ -332,29 +332,29 @@ export function SkillsPage() {
                 <label className="text-xs font-medium mb-1.5 block">Installation Scope</label>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setAddGlobal(false)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors",
-                      !addGlobal
-                        ? "border-primary bg-primary/5 text-primary font-medium"
-                        : "border-border hover:border-primary/30"
-                    )}
-                  >
-                    <FolderOpen className="h-3.5 w-3.5" />
-                    Project
-                  </button>
-                  <button
                     onClick={() => setAddGlobal(true)}
                     className={cn(
-                      "flex-1 flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs transition-colors",
+                      "flex-1 flex items-center justify-center gap-2 rounded-md border-2 px-3 py-2.5 text-xs transition-colors",
                       addGlobal
-                        ? "border-primary bg-primary/5 text-primary font-medium"
-                        : "border-border hover:border-primary/30"
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border bg-transparent hover:border-primary/30 text-muted-foreground"
                     )}
                   >
                     <Globe className="h-3.5 w-3.5" />
                     Global
-                    <span className="text-[10px] text-muted-foreground font-normal">(~/)</span>
+                    <span className={cn("text-[10px] font-normal", addGlobal ? "text-primary/70" : "text-muted-foreground/60")}>(~/)</span>
+                  </button>
+                  <button
+                    onClick={() => setAddGlobal(false)}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 rounded-md border-2 px-3 py-2.5 text-xs transition-colors",
+                      !addGlobal
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border bg-transparent hover:border-primary/30 text-muted-foreground"
+                    )}
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    Project
                   </button>
                 </div>
 
