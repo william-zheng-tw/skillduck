@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { Skill, AgentInfo } from "@/types/skills";
 
 interface AppState {
@@ -24,26 +25,37 @@ interface AppState {
   setAgentsScanning: (scanning: boolean) => void;
 }
 
-export const useStore = create<AppState>((set) => ({
-  skills: [],
-  agents: [],
-  selectedSkill: null,
-  selectedAgent: null,
-  cliOutput: [],
-  isLoading: false,
-  currentPage: "skills",
-  agentsScanned: false,
-  agentsScanning: false,
+export const useStore = create<AppState>()(
+  persist(
+    (set) => ({
+      skills: [],
+      agents: [],
+      selectedSkill: null,
+      selectedAgent: null,
+      cliOutput: [],
+      isLoading: false,
+      currentPage: "skills",
+      agentsScanned: false,
+      agentsScanning: false,
 
-  setSkills: (skills) => set({ skills }),
-  setAgents: (agents) => set({ agents }),
-  setSelectedSkill: (skill) => set({ selectedSkill: skill }),
-  setSelectedAgent: (agent) => set({ selectedAgent: agent }),
-  appendCliOutput: (line) =>
-    set((state) => ({ cliOutput: [...state.cliOutput.slice(-500), line] })),
-  clearCliOutput: () => set({ cliOutput: [] }),
-  setIsLoading: (loading) => set({ isLoading: loading }),
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setAgentsScanned: (scanned) => set({ agentsScanned: scanned }),
-  setAgentsScanning: (scanning) => set({ agentsScanning: scanning }),
-}));
+      setSkills: (skills) => set({ skills }),
+      setAgents: (agents) => set({ agents }),
+      setSelectedSkill: (skill) => set({ selectedSkill: skill }),
+      setSelectedAgent: (agent) => set({ selectedAgent: agent }),
+      appendCliOutput: (line) =>
+        set((state) => ({ cliOutput: [...state.cliOutput.slice(-500), line] })),
+      clearCliOutput: () => set({ cliOutput: [] }),
+      setIsLoading: (loading) => set({ isLoading: loading }),
+      setCurrentPage: (page) => set({ currentPage: page }),
+      setAgentsScanned: (scanned) => set({ agentsScanned: scanned }),
+      setAgentsScanning: (scanning) => set({ agentsScanning: scanning }),
+    }),
+    {
+      name: "skills-dashboard-store",
+      partialize: (state) => ({
+        agents: state.agents,
+        agentsScanned: state.agentsScanned,
+      }),
+    }
+  )
+);
