@@ -19,6 +19,7 @@ pub struct AgentGlobalInfo {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AgentProjectInfo {
     pub path: String,
+    pub project_root: String,
     pub skills: Vec<String>,
 }
 
@@ -220,8 +221,13 @@ fn scan_for_projects(agent: &AgentDefinition, scan_roots: &[PathBuf]) -> Vec<Age
             
             // Check if this path ends with the agent's project_path
             if path.is_dir() && path.to_string_lossy().ends_with(&agent.project_path) {
-                // Get the project root (parent of the agent's skills directory)
-                if let Some(project_root) = path.parent() {
+                // Get the project root by stripping the agent's project_path segments
+                let depth = agent.project_path.split('/').filter(|s| !s.is_empty()).count();
+                let mut project_root_opt = Some(path.to_path_buf());
+                for _ in 0..depth {
+                    project_root_opt = project_root_opt.and_then(|p| p.parent().map(|pp| pp.to_path_buf()));
+                }
+                if let Some(project_root) = project_root_opt {
                     let project_root_str = project_root.to_string_lossy().to_string();
                     
                     // Skip if we've already seen this project
@@ -234,7 +240,8 @@ fn scan_for_projects(agent: &AgentDefinition, scan_roots: &[PathBuf]) -> Vec<Age
                     // Only add if there are skills
                     if !skills.is_empty() {
                         projects.push(AgentProjectInfo {
-                            path: project_root_str,
+                            path: path.to_string_lossy().to_string(),
+                            project_root: project_root_str,
                             skills,
                         });
                     }

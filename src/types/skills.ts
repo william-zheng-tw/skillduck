@@ -28,6 +28,7 @@ export interface AgentGlobalInfo {
 
 export interface AgentProjectInfo {
   path: string;
+  project_root: string;
   skills: string[];
 }
 

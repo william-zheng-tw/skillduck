@@ -140,7 +140,8 @@ pub fn merge_skills(all_skills: Vec<Skill>) -> Vec<Skill> {
 pub fn list_skills(scope: String) -> Result<Vec<Skill>, String> {
     let agents = super::agents::get_agent_definitions();
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let settings = super::settings::get_settings().unwrap_or_default();
+    let scan_roots: Vec<PathBuf> = settings.scan_roots.iter().map(|r| PathBuf::from(r)).collect();
 
     let mut all_skills = Vec::new();
 
@@ -152,9 +153,34 @@ pub fn list_skills(scope: String) -> Result<Vec<Skill>, String> {
         }
 
         if scope == "all" || scope == "project" {
-            let project_path = cwd.join(&agent.project_path);
-            let skills = scan_directory_for_skills(&project_path, "project", &agent.id);
-            all_skills.extend(skills);
+            for root in &scan_roots {
+                if !root.exists() {
+                    continue;
+                }
+                for entry in WalkDir::new(root)
+                    .follow_links(true)
+                    .into_iter()
+                    .filter_entry(|e| {
+                        if let Some(name) = e.file_name().to_str() {
+                            !matches!(
+                                name,
+                                "node_modules" | ".git" | "target" | "dist" | "build" |
+                                ".next" | ".nuxt" | ".venv" | "venv" | "__pycache__" |
+                                ".cache" | "vendor" | "bower_components"
+                            )
+                        } else {
+                            true
+                        }
+                    })
+                    .filter_map(|e| e.ok())
+                {
+                    let path = entry.path();
+                    if path.is_dir() && path.to_string_lossy().ends_with(&agent.project_path) {
+                        let skills = scan_directory_for_skills(path, "project", &agent.id);
+                        all_skills.extend(skills);
+                    }
+                }
+            }
         }
     }
 

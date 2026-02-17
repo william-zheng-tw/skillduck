@@ -480,7 +480,7 @@ interface ProjectNodeProps {
 }
 
 function ProjectNode({ project, selected, onSelect }: ProjectNodeProps) {
-  const projectName = project.path.split("/").pop() || project.path;
+  const projectName = project.project_root.split("/").pop() || project.project_root;
 
   return (
     <div
@@ -492,7 +492,7 @@ function ProjectNode({ project, selected, onSelect }: ProjectNodeProps) {
     >
       <div className="w-4" />
       <FolderOpen className="h-3 w-3 text-success" />
-      <span className="text-xs flex-1 truncate" title={project.path}>
+      <span className="text-xs flex-1 truncate" title={project.project_root}>
         {projectName}
       </span>
       {project.skills.length > 0 && (
@@ -634,17 +634,26 @@ function ProjectDetail({
 }: {
   project: AgentProjectInfo;
 }) {
+  const projectName = project.project_root.split("/").pop() || project.project_root;
+
   return (
     <div className="w-80 border-l border-border overflow-y-auto p-6">
       <div className="flex items-center gap-2 mb-4">
         <FolderOpen className="h-5 w-5 text-success" />
-        <h3 className="font-semibold">Project</h3>
+        <h3 className="font-semibold">{projectName}</h3>
       </div>
 
       <div className="space-y-4">
         <div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-            Path
+            Project Folder
+          </div>
+          <div className="text-sm font-medium">{projectName}</div>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+            Skills Path
           </div>
           <code className="block text-[11px] font-mono bg-secondary rounded px-2 py-1 break-all">
             {project.path}
