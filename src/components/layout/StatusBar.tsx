@@ -15,7 +15,7 @@ export function StatusBar() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const lastLine = cliOutput[cliOutput.length - 1] || "Ready";
+  const lastLine = [...cliOutput].reverse().find((l) => l.trim()) ?? "Ready";
 
   return (
     <div className="border-t border-border bg-card">
