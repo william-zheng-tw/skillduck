@@ -98,6 +98,10 @@ export async function cliUpdateSkills(): Promise<CliOutput> {
   return invoke<CliOutput>("cli_update_skills");
 }
 
+export async function cliUpdateSkill(skillName: string): Promise<CliOutput> {
+  return invoke<CliOutput>("cli_update_skill", { skillName });
+}
+
 export async function cliInitSkill(name: string, path: string): Promise<CliOutput> {
   return invoke<CliOutput>("cli_init_skill", { name, path });
 }

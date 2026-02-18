@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/hooks/useStore";
+import { useUpdates } from "@/hooks/useUpdates";
 import { listSkills, cliRemoveSkill } from "@/lib/tauri";
 import { SkillCard } from "@/components/skills/SkillCard";
 import { SkillDetail } from "@/components/skills/SkillDetail";
@@ -12,6 +13,7 @@ import {
   FolderOpen,
   Filter,
   Loader2,
+  ArrowUpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +26,9 @@ export function SkillsPage() {
   const setSelectedSkill = useStore((s) => s.setSelectedSkill);
   const setIsLoading = useStore((s) => s.setIsLoading);
   const appendCliOutput = useStore((s) => s.appendCliOutput);
+
+  const { pendingUpdates, checkingUpdates, updatingSkills, checkForUpdates, updateAllSkills } =
+    useUpdates();
 
   const [search, setSearch] = useState("");
   const [scope, setScope] = useState<ScopeFilter>("all");
@@ -93,6 +98,14 @@ export function SkillsPage() {
                 <Plus className="h-4 w-4" />
               </button>
               <button
+                onClick={() => checkForUpdates()}
+                disabled={checkingUpdates || loading}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                title="Check for updates"
+              >
+                <ArrowUpCircle className={cn("h-4 w-4", checkingUpdates && "animate-pulse")} />
+              </button>
+              <button
                 onClick={loadSkills}
                 disabled={loading}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -102,6 +115,25 @@ export function SkillsPage() {
               </button>
             </div>
           </div>
+          {pendingUpdates.length > 0 && (
+            <div className="flex items-center justify-between rounded-md bg-warning/10 border border-warning/20 px-3 py-2 mb-3">
+              <span className="text-xs text-warning font-medium">
+                {pendingUpdates.length} update{pendingUpdates.length > 1 ? "s" : ""} available
+              </span>
+              <button
+                onClick={() => updateAllSkills(loadSkills)}
+                disabled={updatingSkills}
+                className="inline-flex items-center gap-1 rounded-md bg-warning px-2.5 py-1 text-[11px] font-medium text-warning-foreground hover:bg-warning/90 transition-colors disabled:opacity-50"
+              >
+                {updatingSkills ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <ArrowUpCircle className="h-3 w-3" />
+                )}
+                Update All
+              </button>
+            </div>
+          )}
 
           {/* Search */}
           <div className="relative">
@@ -172,7 +204,7 @@ export function SkillsPage() {
       {/* Right Panel - Skill Detail */}
       <div className="flex-1">
         {selectedSkill ? (
-          <SkillDetail skill={selectedSkill} onRemove={handleRemove} />
+          <SkillDetail skill={selectedSkill} onRemove={handleRemove} onUpdated={loadSkills} />
         ) : (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">

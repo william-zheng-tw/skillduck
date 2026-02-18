@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { useStore } from "@/hooks/useStore";
+import { useUpdates } from "@/hooks/useUpdates";
 import { SkillsPage } from "@/pages/SkillsPage";
 import { AgentsPage } from "@/pages/AgentsPage";
 import { ExplorePage } from "@/pages/ExplorePage";
@@ -41,10 +42,13 @@ function PageRouter() {
 
 function App() {
   const initGlobalAgents = useStore((s) => s.initGlobalAgents);
+  const { checkForUpdates } = useUpdates();
 
   useEffect(() => {
     initGlobalAgents();
-  }, [initGlobalAgents]);
+    // Silently check for updates on startup (non-blocking)
+    checkForUpdates().catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <QueryClientProvider client={queryClient}>

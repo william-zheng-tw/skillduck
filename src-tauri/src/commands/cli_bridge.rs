@@ -124,6 +124,11 @@ pub async fn cli_update_skills() -> Result<CliOutput, String> {
 }
 
 #[tauri::command]
+pub async fn cli_update_skill(skill_name: String) -> Result<CliOutput, String> {
+    run_skills_command(vec!["update".to_string(), skill_name], None).await
+}
+
+#[tauri::command]
 pub async fn cli_init_skill(name: String, path: String) -> Result<CliOutput, String> {
     let npx = find_npx();
 

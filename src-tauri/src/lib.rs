@@ -24,6 +24,7 @@ pub fn run() {
             commands::cli_bridge::cli_remove_skill,
             commands::cli_bridge::cli_check_updates,
             commands::cli_bridge::cli_update_skills,
+            commands::cli_bridge::cli_update_skill,
             commands::cli_bridge::cli_init_skill,
             commands::cli_bridge::cli_add_skill_stream,
             // Sandbox

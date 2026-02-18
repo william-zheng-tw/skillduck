@@ -75,6 +75,12 @@ export interface ScriptOutput {
   duration_ms: number;
 }
 
+export interface UpdateInfo {
+  skillName: string;
+  currentVersion?: string;
+  latestVersion?: string;
+}
+
 export interface SkillLockEntry {
   name: string;
   source: string;

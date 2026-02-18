@@ -5,6 +5,7 @@ import {
   Compass,
   Bot,
   Settings,
+  ArrowUpCircle,
 } from "lucide-react";
 
 interface NavItem {
@@ -27,8 +28,10 @@ export function Sidebar() {
   const setCurrentPage = useStore((s) => s.setCurrentPage);
   const skills = useStore((s) => s.skills);
   const agents = useStore((s) => s.agents);
+  const pendingUpdates = useStore((s) => s.pendingUpdates);
 
   const detectedAgents = agents.filter((a) => a.detected).length;
+  const updateCount = pendingUpdates.length || skills.filter((s) => s.has_update).length;
 
   return (
     <aside className="flex h-full w-56 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -57,8 +60,15 @@ export function Sidebar() {
               <Icon className="h-4 w-4 shrink-0" />
               <span>{item.label}</span>
               {item.id === "skills" && skills.length > 0 && (
-                <span className="ml-auto text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                  {skills.length}
+                <span className="ml-auto flex items-center gap-1">
+                  <span className="text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                    {skills.length}
+                  </span>
+                  {updateCount > 0 && (
+                    <span title={`${updateCount} update${updateCount > 1 ? "s" : ""} available`}>
+                      <ArrowUpCircle className="h-3 w-3 text-warning" />
+                    </span>
+                  )}
                 </span>
               )}
               {item.id === "agents" && detectedAgents > 0 && (

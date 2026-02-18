@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { Skill } from "@/types/skills";
+import { useUpdates } from "@/hooks/useUpdates";
 import {
   Package,
   Globe,
@@ -15,6 +16,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  ArrowUpCircle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,9 +24,11 @@ import remarkGfm from "remark-gfm";
 interface SkillDetailProps {
   skill: Skill;
   onRemove?: (skill: Skill) => Promise<void>;
+  onUpdated?: () => void;
 }
 
-export function SkillDetail({ skill, onRemove }: SkillDetailProps) {
+export function SkillDetail({ skill, onRemove, onUpdated }: SkillDetailProps) {
+  const { updateSkill, updatingSkills } = useUpdates();
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [bodyExpanded, setBodyExpanded] = useState(false);
@@ -79,15 +83,31 @@ export function SkillDetail({ skill, onRemove }: SkillDetailProps) {
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{skill.description}</p>
         </div>
-        {onRemove && (
-          <button
-            onClick={() => setShowRemoveConfirm(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-destructive/20 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-          >
-            <Trash2 className="h-3 w-3" />
-            Remove
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {skill.has_update && (
+            <button
+              onClick={() => updateSkill(skill.name, onUpdated)}
+              disabled={updatingSkills}
+              className="inline-flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs text-warning hover:bg-warning/20 transition-colors disabled:opacity-50"
+            >
+              {updatingSkills ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ArrowUpCircle className="h-3 w-3" />
+              )}
+              Update
+            </button>
+          )}
+          {onRemove && (
+            <button
+              onClick={() => setShowRemoveConfirm(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-destructive/20 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+            >
+              <Trash2 className="h-3 w-3" />
+              Remove
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Remove Confirmation Dialog */}

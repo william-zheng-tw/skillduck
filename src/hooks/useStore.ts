@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Skill, AgentInfo } from "@/types/skills";
+import type { Skill, AgentInfo, UpdateInfo } from "@/types/skills";
 import { detectAgents } from "@/lib/tauri";
 
 interface AppState {
@@ -25,6 +25,14 @@ interface AppState {
   setAgentsScanned: (scanned: boolean) => void;
   setAgentsScanning: (scanning: boolean) => void;
   initGlobalAgents: () => Promise<void>;
+  pendingUpdates: UpdateInfo[];
+  lastCheckedAt: string | null;
+  checkingUpdates: boolean;
+  updatingSkills: boolean;
+  setPendingUpdates: (updates: UpdateInfo[]) => void;
+  setLastCheckedAt: (at: string | null) => void;
+  setCheckingUpdates: (v: boolean) => void;
+  setUpdatingSkills: (v: boolean) => void;
   dismissNoScanRootsAlert: boolean;
   setDismissNoScanRootsAlert: (v: boolean) => void;
 }
@@ -41,6 +49,10 @@ export const useStore = create<AppState>()(
       currentPage: "skills",
       agentsScanned: false,
       agentsScanning: false,
+      pendingUpdates: [],
+      lastCheckedAt: null,
+      checkingUpdates: false,
+      updatingSkills: false,
 
       setSkills: (skills) => set({ skills }),
       setAgents: (agents) => set({ agents }),
@@ -53,6 +65,10 @@ export const useStore = create<AppState>()(
       setCurrentPage: (page) => set({ currentPage: page }),
       setAgentsScanned: (scanned) => set({ agentsScanned: scanned }),
       setAgentsScanning: (scanning) => set({ agentsScanning: scanning }),
+      setPendingUpdates: (updates) => set({ pendingUpdates: updates }),
+      setLastCheckedAt: (at) => set({ lastCheckedAt: at }),
+      setCheckingUpdates: (v) => set({ checkingUpdates: v }),
+      setUpdatingSkills: (v) => set({ updatingSkills: v }),
       dismissNoScanRootsAlert: false,
       setDismissNoScanRootsAlert: (v) => set({ dismissNoScanRootsAlert: v }),
       initGlobalAgents: async () => {
