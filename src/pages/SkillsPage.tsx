@@ -63,7 +63,7 @@ export function SkillsPage() {
     setIsLoading(true);
     try {
       const isGlobal = skill.scope === "global";
-      const result = await cliRemoveSkill([skill.name], skill.agents, isGlobal);
+      const result = await cliRemoveSkill([skill.name], skill.agents, isGlobal, skill.project_root);
       appendCliOutput(result.stdout);
       if (result.stderr) appendCliOutput(result.stderr);
       setSelectedSkill(null);

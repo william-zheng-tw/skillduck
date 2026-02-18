@@ -21,6 +21,8 @@ pub struct Skill {
     pub agents: Vec<String>,
     pub has_update: bool,
     pub body: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_root: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -70,7 +72,7 @@ fn flatten_metadata(metadata: Option<HashMap<String, serde_yaml::Value>>) -> Opt
     })
 }
 
-pub fn scan_directory_for_skills(base_path: &Path, scope: &str, agent_id: &str) -> Vec<Skill> {
+pub fn scan_directory_for_skills(base_path: &Path, scope: &str, agent_id: &str, project_root: Option<&str>) -> Vec<Skill> {
     let mut skills = Vec::new();
 
     if !base_path.exists() {
@@ -104,6 +106,7 @@ pub fn scan_directory_for_skills(base_path: &Path, scope: &str, agent_id: &str) 
                         agents: vec![agent_id.to_string()],
                         has_update: false,
                         body,
+                        project_root: project_root.map(|s| s.to_string()),
                     };
 
                     skills.push(skill);
@@ -148,7 +151,7 @@ pub fn list_skills(scope: String) -> Result<Vec<Skill>, String> {
     for agent in &agents {
         if scope == "all" || scope == "global" {
             let global_path = home.join(&agent.global_path);
-            let skills = scan_directory_for_skills(&global_path, "global", &agent.id);
+            let skills = scan_directory_for_skills(&global_path, "global", &agent.id, None);
             all_skills.extend(skills);
         }
 
@@ -176,7 +179,14 @@ pub fn list_skills(scope: String) -> Result<Vec<Skill>, String> {
                 {
                     let path = entry.path();
                     if path.is_dir() && path.to_string_lossy().ends_with(&agent.project_path) {
-                        let skills = scan_directory_for_skills(path, "project", &agent.id);
+                        // Derive project root by stripping the agent's project_path segments
+                        let depth = agent.project_path.split('/').filter(|s| !s.is_empty()).count();
+                        let mut project_root_opt = Some(path.to_path_buf());
+                        for _ in 0..depth {
+                            project_root_opt = project_root_opt.and_then(|p| p.parent().map(|pp| pp.to_path_buf()));
+                        }
+                        let project_root_str = project_root_opt.map(|p| p.to_string_lossy().to_string());
+                        let skills = scan_directory_for_skills(path, "project", &agent.id, project_root_str.as_deref());
                         all_skills.extend(skills);
                     }
                 }
@@ -208,6 +218,7 @@ pub fn parse_skill_md(path: String) -> Result<Skill, String> {
         agents: vec![],
         has_update: false,
         body,
+        project_root: None,
     })
 }
 

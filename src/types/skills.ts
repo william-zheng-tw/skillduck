@@ -19,6 +19,7 @@ export interface Skill {
   agents: string[];
   has_update: boolean;
   body: string;
+  project_root?: string;
 }
 
 export interface AgentGlobalInfo {
