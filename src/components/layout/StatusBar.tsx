@@ -2,6 +2,12 @@ import { useStore } from "@/hooks/useStore";
 import { Terminal, Loader2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 
+// Strip ANSI escape sequences and terminal control codes
+function stripAnsi(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "").replace(/\x1B\][^\x07]*\x07/g, "").replace(/[\x00-\x09\x0B-\x1F\x7F]/g, "");
+}
+
 export function StatusBar() {
   const cliOutput = useStore((s) => s.cliOutput);
   const isLoading = useStore((s) => s.isLoading);
@@ -15,7 +21,11 @@ export function StatusBar() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const lastLine = [...cliOutput].reverse().find((l) => l.trim()) ?? "Ready";
+  const lastLine =
+    [...cliOutput]
+      .reverse()
+      .flatMap((l) => stripAnsi(l).split("\n").reverse())
+      .find((l) => l.trim()) ?? "Ready";
 
   return (
     <div className="border-t border-border bg-card">
@@ -45,7 +55,7 @@ export function StatusBar() {
           <div className="max-h-40 overflow-y-auto px-4 py-2 select-text" style={{ WebkitUserSelect: "text", userSelect: "text" }}>
             <pre className="text-[11px] font-mono text-muted-foreground whitespace-pre-wrap">
               {cliOutput.length > 0
-                ? cliOutput.join("\n")
+                ? cliOutput.map(stripAnsi).join("\n")
                 : "No output yet."}
             </pre>
           </div>
