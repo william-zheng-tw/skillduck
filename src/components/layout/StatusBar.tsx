@@ -5,7 +5,7 @@ import { useState } from "react";
 // Strip ANSI escape sequences and terminal control codes
 function stripAnsi(str: string): string {
   // eslint-disable-next-line no-control-regex
-  return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "").replace(/\x1B\][^\x07]*\x07/g, "").replace(/[\x00-\x09\x0B-\x1F\x7F]/g, "");
+  return str.replace(/\x1B\[[?!0-9;]*[A-Za-z]/g, "").replace(/\x1B\][^\x07]*\x07/g, "").replace(/[\x00-\x09\x0B-\x1F\x7F]/g, "");
 }
 
 export function StatusBar() {
