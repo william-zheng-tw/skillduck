@@ -13,8 +13,6 @@ import {
   Globe,
   Package,
   Loader2,
-  ChevronRight,
-  ChevronDown,
   FolderTree,
   Settings,
   Search,
@@ -30,6 +28,8 @@ type SelectedNode =
   | { type: "global"; agentId: string }
   | { type: "project"; agentId: string; projectPath: string };
 
+type ScopeTab = "global" | "project";
+
 export function AgentsPage() {
   const agents = useStore((s) => s.agents);
   const setAgents = useStore((s) => s.setAgents);
@@ -44,8 +44,7 @@ export function AgentsPage() {
   const setDismissNoScanRootsAlert = useStore((s) => s.setDismissNoScanRootsAlert);
 
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null);
-  const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<ScopeTab>("global");
   const [hasScanRoots, setHasScanRoots] = useState<boolean | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
 
@@ -92,32 +91,12 @@ export function AgentsPage() {
     setDialog({ type: "confirm-refresh" });
   }, []);
 
-  const toggleAgent = (agentId: string) => {
-    setExpandedAgents((prev) => {
-      const next = new Set(prev);
-      if (next.has(agentId)) {
-        next.delete(agentId);
-      } else {
-        next.add(agentId);
-      }
-      return next;
-    });
-  };
-
-  const toggleProjects = (agentId: string) => {
-    setExpandedProjects((prev) => {
-      const next = new Set(prev);
-      if (next.has(agentId)) {
-        next.delete(agentId);
-      } else {
-        next.add(agentId);
-      }
-      return next;
-    });
+  const handleTabChange = (tab: ScopeTab) => {
+    setActiveTab(tab);
+    setSelectedNode(null);
   };
 
   const detected = agents.filter((a) => a.detected);
-  const notDetected = agents.filter((a) => !a.detected);
 
   const selectedAgent = selectedNode
     ? agents.find((a) => a.id === selectedNode.agentId)
@@ -233,9 +212,10 @@ export function AgentsPage() {
   return (
     <>
     <div className="flex h-full">
-      {/* Agent Tree */}
+      {/* Left Panel */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="flex items-center justify-between mb-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold">Agent Skills</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -252,57 +232,51 @@ export function AgentsPage() {
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-4 border-b border-border mb-4">
+          <button
+            onClick={() => handleTabChange("global")}
+            className={cn(
+              "pb-2 text-sm transition-colors",
+              activeTab === "global"
+                ? "border-b-2 border-primary text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Global
+          </button>
+          <button
+            onClick={() => handleTabChange("project")}
+            className={cn(
+              "pb-2 text-sm transition-colors",
+              activeTab === "project"
+                ? "border-b-2 border-primary text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Project
+          </button>
+        </div>
+
         {agentsScanning ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Scanning directories...</p>
           </div>
+        ) : activeTab === "global" ? (
+          <GlobalTab
+            agents={agents}
+            selectedNode={selectedNode}
+            onSelectNode={setSelectedNode}
+          />
         ) : (
-          <div className="space-y-6">
-            {detected.length > 0 && (
-              <div>
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                  Detected
-                </h3>
-                <div className="space-y-1">
-                  {detected.map((agent) => (
-                    <AgentTreeNode
-                      key={agent.id}
-                      agent={agent}
-                      expanded={expandedAgents.has(agent.id)}
-                      projectsExpanded={expandedProjects.has(agent.id)}
-                      selectedNode={selectedNode}
-                      onToggle={() => toggleAgent(agent.id)}
-                      onToggleProjects={() => toggleProjects(agent.id)}
-                      onSelectNode={setSelectedNode}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {notDetected.length > 0 && (
-              <div>
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                  Not Detected
-                </h3>
-                <div className="space-y-1">
-                  {notDetected.map((agent) => (
-                    <AgentTreeNode
-                      key={agent.id}
-                      agent={agent}
-                      expanded={expandedAgents.has(agent.id)}
-                      projectsExpanded={expandedProjects.has(agent.id)}
-                      selectedNode={selectedNode}
-                      onToggle={() => toggleAgent(agent.id)}
-                      onToggleProjects={() => toggleProjects(agent.id)}
-                      onSelectNode={setSelectedNode}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <ProjectTab
+            agents={agents}
+            selectedNode={selectedNode}
+            onSelectNode={setSelectedNode}
+            hasScanRoots={hasScanRoots}
+            onGoToSettings={() => setCurrentPage("settings")}
+          />
         )}
       </div>
 
@@ -316,190 +290,126 @@ export function AgentsPage() {
   );
 }
 
-interface AgentTreeNodeProps {
-  agent: AgentInfo;
-  expanded: boolean;
-  projectsExpanded: boolean;
+interface GlobalTabProps {
+  agents: AgentInfo[];
   selectedNode: SelectedNode | null;
-  onToggle: () => void;
-  onToggleProjects: () => void;
   onSelectNode: (node: SelectedNode) => void;
 }
 
-function AgentTreeNode({
-  agent,
-  expanded,
-  projectsExpanded,
-  selectedNode,
-  onToggle,
-  onToggleProjects,
-  onSelectNode,
-}: AgentTreeNodeProps) {
-  const totalSkills =
-    agent.global.skills.length +
-    agent.projects.reduce((sum, p) => sum + p.skills.length, 0);
-
-  const isAgentSelected =
-    selectedNode?.type === "agent" && selectedNode.agentId === agent.id;
-
+function GlobalTab({ agents, selectedNode, onSelectNode }: GlobalTabProps) {
   return (
-    <div className="select-none">
-      {/* Agent Root Node */}
-      <div
-        className={cn(
-          "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent/50 transition-colors",
-          isAgentSelected && "bg-accent"
-        )}
-        onClick={() => {
-          onSelectNode({ type: "agent", agentId: agent.id });
-          onToggle();
-        }}
-      >
-        <button className="p-0.5 hover:bg-accent rounded">
-          {expanded ? (
-            <ChevronDown className="h-3 w-3" />
-          ) : (
-            <ChevronRight className="h-3 w-3" />
-          )}
-        </button>
-        <Bot className="h-4 w-4 text-primary" />
-        <span className="text-sm font-medium flex-1">{agent.display_name}</span>
-        {totalSkills > 0 && (
-          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-            {totalSkills}
-          </span>
-        )}
-        {agent.detected ? (
-          <CheckCircle2 className="h-4 w-4 text-success" />
+    <div className="space-y-1">
+      {agents.map((agent) => {
+        const isSelected =
+          selectedNode?.type === "global" && selectedNode.agentId === agent.id;
+        return (
+          <div
+            key={agent.id}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors",
+              isSelected && "bg-accent"
+            )}
+            onClick={() => onSelectNode({ type: "global", agentId: agent.id })}
+          >
+            <Bot className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-sm font-medium flex-1">{agent.display_name}</span>
+            {agent.global.skills.length > 0 && (
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                {agent.global.skills.length}
+              </span>
+            )}
+            {agent.detected ? (
+              <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+            ) : (
+              <XCircle className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+interface ProjectTabProps {
+  agents: AgentInfo[];
+  selectedNode: SelectedNode | null;
+  onSelectNode: (node: SelectedNode) => void;
+  hasScanRoots: boolean | null;
+  onGoToSettings: () => void;
+}
+
+function ProjectTab({ agents, selectedNode, onSelectNode, hasScanRoots, onGoToSettings }: ProjectTabProps) {
+  const agentsWithProjects = agents.filter((a) => a.projects.length > 0);
+
+  if (agentsWithProjects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+        <FolderTree className="h-8 w-8 text-muted-foreground/40" />
+        {hasScanRoots === false ? (
+          <>
+            <p className="text-sm text-muted-foreground">No scan directories configured.</p>
+            <button
+              onClick={onGoToSettings}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+            >
+              <Settings className="h-3 w-3" />
+              Go to Settings
+            </button>
+          </>
         ) : (
-          <XCircle className="h-4 w-4 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">No project skills found.</p>
         )}
       </div>
+    );
+  }
 
-      {/* Children */}
-      {expanded && (
-        <div className="ml-4 mt-1 space-y-1">
-          {/* Global Node */}
-          <GlobalNode
-            agent={agent}
-            selected={
-              selectedNode?.type === "global" &&
-              selectedNode.agentId === agent.id
-            }
-            onSelect={() =>
-              onSelectNode({ type: "global", agentId: agent.id })
-            }
-          />
-
-          {/* Projects Node */}
-          {agent.projects.length > 0 && (
-            <>
-              <div
-                className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent/50 transition-colors"
-                )}
-                onClick={onToggleProjects}
-              >
-                <button className="p-0.5 hover:bg-accent rounded">
-                  {projectsExpanded ? (
-                    <ChevronDown className="h-3 w-3" />
-                  ) : (
-                    <ChevronRight className="h-3 w-3" />
+  return (
+    <div className="space-y-4">
+      {agentsWithProjects.map((agent) => (
+        <div key={agent.id}>
+          <div className="flex items-center gap-2 px-2 py-1 mb-1">
+            <Bot className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {agent.display_name}
+            </span>
+          </div>
+          <div className="space-y-1">
+            {agent.projects.map((project, idx) => {
+              const projectName = project.project_root.split("/").pop() || project.project_root;
+              const isSelected =
+                selectedNode?.type === "project" &&
+                selectedNode.agentId === agent.id &&
+                selectedNode.projectPath === project.path;
+              return (
+                <div
+                  key={`${agent.id}-${project.path}-${idx}`}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors ml-2",
+                    isSelected && "bg-accent"
                   )}
-                </button>
-                <FolderTree className="h-3 w-3 text-success" />
-                <span className="text-xs">Projects</span>
-                <span className="text-[10px] text-muted-foreground">
-                  ({agent.projects.length})
-                </span>
-              </div>
-
-              {projectsExpanded && (
-                <div className="ml-4 space-y-1">
-                  {agent.projects.map((project, idx) => (
-                    <ProjectNode
-                      key={`${agent.id}-${project.path}-${idx}`}
-                      agent={agent}
-                      project={project}
-                      selected={
-                        selectedNode?.type === "project" &&
-                        selectedNode.agentId === agent.id &&
-                        selectedNode.projectPath === project.path
-                      }
-                      onSelect={() =>
-                        onSelectNode({
-                          type: "project",
-                          agentId: agent.id,
-                          projectPath: project.path,
-                        })
-                      }
-                    />
-                  ))}
+                  onClick={() =>
+                    onSelectNode({
+                      type: "project",
+                      agentId: agent.id,
+                      projectPath: project.path,
+                    })
+                  }
+                >
+                  <FolderOpen className="h-4 w-4 text-success shrink-0" />
+                  <span className="text-sm flex-1 truncate" title={project.project_root}>
+                    {projectName}
+                  </span>
+                  {project.skills.length > 0 && (
+                    <span className="text-[10px] bg-success/10 text-success px-1.5 py-0.5 rounded-full">
+                      {project.skills.length}
+                    </span>
+                  )}
                 </div>
-              )}
-            </>
-          )}
+              );
+            })}
+          </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-interface GlobalNodeProps {
-  agent: AgentInfo;
-  selected: boolean;
-  onSelect: () => void;
-}
-
-function GlobalNode({ agent, selected, onSelect }: GlobalNodeProps) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent/50 transition-colors",
-        selected && "bg-accent"
-      )}
-      onClick={onSelect}
-    >
-      <div className="w-4" />
-      <Globe className="h-3 w-3 text-primary" />
-      <span className="text-xs flex-1">Global</span>
-      {agent.global.skills.length > 0 && (
-        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-          {agent.global.skills.length}
-        </span>
-      )}
-    </div>
-  );
-}
-
-interface ProjectNodeProps {
-  agent: AgentInfo;
-  project: AgentProjectInfo;
-  selected: boolean;
-  onSelect: () => void;
-}
-
-function ProjectNode({ project, selected, onSelect }: ProjectNodeProps) {
-  const projectName = project.project_root.split("/").pop() || project.project_root;
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent/50 transition-colors",
-        selected && "bg-accent"
-      )}
-      onClick={onSelect}
-    >
-      <div className="w-4" />
-      <FolderOpen className="h-3 w-3 text-success" />
-      <span className="text-xs flex-1 truncate" title={project.project_root}>
-        {projectName}
-      </span>
-      {project.skills.length > 0 && (
-        <span className="text-[10px] bg-success/10 text-success px-1.5 py-0.5 rounded-full">
-          {project.skills.length}
-        </span>
-      )}
+      ))}
     </div>
   );
 }
@@ -510,9 +420,7 @@ interface DetailPanelProps {
 }
 
 function DetailPanel({ agent, selectedNode }: DetailPanelProps) {
-  if (selectedNode.type === "agent") {
-    return <AgentDetail agent={agent} />;
-  } else if (selectedNode.type === "global") {
+  if (selectedNode.type === "global") {
     return <GlobalDetail agent={agent} />;
   } else if (selectedNode.type === "project") {
     const project = agent.projects.find(
@@ -522,67 +430,6 @@ function DetailPanel({ agent, selectedNode }: DetailPanelProps) {
     return <ProjectDetail project={project} />;
   }
   return null;
-}
-
-function AgentDetail({ agent }: { agent: AgentInfo }) {
-  const totalSkills =
-    agent.global.skills.length +
-    agent.projects.reduce((sum, p) => sum + p.skills.length, 0);
-
-  return (
-    <div className="w-80 border-l border-border overflow-y-auto p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Bot className="h-5 w-5 text-primary" />
-        <h3 className="font-semibold">{agent.display_name}</h3>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <div className="text-xs text-muted-foreground mb-1">Status</div>
-          <div className="flex items-center gap-2">
-            {agent.detected ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-success" />
-                <span className="text-sm">Detected</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Not Detected</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-xs text-muted-foreground mb-1">Total Skills</div>
-          <div className="text-2xl font-bold">{totalSkills}</div>
-        </div>
-
-        <div>
-          <div className="text-xs text-muted-foreground mb-2">Breakdown</div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Globe className="h-3 w-3 text-primary" />
-                <span className="text-xs">Global</span>
-              </div>
-              <span className="text-xs font-medium">{agent.global.skills.length}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FolderTree className="h-3 w-3 text-success" />
-                <span className="text-xs">Projects</span>
-              </div>
-              <span className="text-xs font-medium">
-                {agent.projects.reduce((sum, p) => sum + p.skills.length, 0)} ({agent.projects.length} projects)
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function GlobalDetail({ agent }: { agent: AgentInfo }) {
