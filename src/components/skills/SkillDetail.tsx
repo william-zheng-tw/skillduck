@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Skill } from "@/types/skills";
 import {
   Package,
@@ -13,6 +13,8 @@ import {
   Trash2,
   Loader2,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -25,6 +27,22 @@ interface SkillDetailProps {
 export function SkillDetail({ skill, onRemove }: SkillDetailProps) {
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [bodyExpanded, setBodyExpanded] = useState(false);
+  const [bodyOverflows, setBodyOverflows] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setBodyExpanded(false);
+    const el = bodyRef.current;
+    if (!el) return;
+    // 12rem = 192px — same as the collapsed max-height
+    const COLLAPSED_HEIGHT = 192;
+    const check = () => setBodyOverflows(el.scrollHeight > COLLAPSED_HEIGHT);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [skill.body]);
 
   const handleRemove = async () => {
     if (!onRemove) return;
@@ -159,8 +177,37 @@ export function SkillDetail({ skill, onRemove }: SkillDetailProps) {
       {skill.body && (
         <div className="mt-6">
           <h3 className="text-sm font-medium mb-2">Instructions</h3>
-          <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-card p-4 break-words overflow-hidden [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_code]:break-all">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{skill.body}</ReactMarkdown>
+          <div className="rounded-lg border bg-card overflow-hidden">
+            <div className="relative">
+              <div
+                ref={bodyRef}
+                className="prose prose-sm dark:prose-invert max-w-none p-4 break-words overflow-hidden [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_code]:break-all transition-[max-height] duration-300"
+                style={{ maxHeight: bodyExpanded ? "none" : "12rem" }}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{skill.body}</ReactMarkdown>
+              </div>
+              {!bodyExpanded && bodyOverflows && (
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+              )}
+            </div>
+            {bodyOverflows && (
+              <button
+                onClick={() => setBodyExpanded((v) => !v)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent border-t transition-colors"
+              >
+                {bodyExpanded ? (
+                  <>
+                    <ChevronUp className="h-3.5 w-3.5" />
+                    Collapse
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3.5 w-3.5" />
+                    Show more
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

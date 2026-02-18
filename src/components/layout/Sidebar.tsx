@@ -35,8 +35,7 @@ export function Sidebar() {
       <div data-tauri-drag-region className="flex items-center gap-2 border-b border-sidebar-border px-4 pt-8 pb-4">
         <Boxes className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-sm font-bold leading-tight">Skill</h1>
-          <p className="text-[10px] text-muted-foreground">Duck</p>
+          <h1 className="text-sm font-bold leading-tight">SkillDuck</h1>
         </div>
       </div>
 
