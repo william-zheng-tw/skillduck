@@ -65,7 +65,7 @@ export const useStore = create<AppState>()(
       },
     }),
     {
-      name: "skills-dashboard-store",
+      name: "skillduck-store",
       partialize: (state) => ({
         agents: state.agents,
         agentsScanned: state.agentsScanned,

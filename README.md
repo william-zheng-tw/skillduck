@@ -1,4 +1,4 @@
-# Skills Dashboard
+# SkillDuck
 
 A desktop GUI for managing [Agent Skills](https://agentskills.io) — the open format for packaging reusable AI agent capabilities.
 

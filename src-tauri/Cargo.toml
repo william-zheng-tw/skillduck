@@ -1,12 +1,12 @@
 [package]
-name = "skills-dashboard"
+name = "skillduck"
 version = "0.1.0"
-description = "Agent Skills Dashboard - Visual GUI for vercel-labs/skills"
-authors = ["Skills Dashboard"]
+description = "SkillDuck - Visual GUI for vercel-labs/skills"
+authors = ["SkillDuck"]
 edition = "2021"
 
 [lib]
-name = "skills_dashboard_lib"
+name = "skillduck_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

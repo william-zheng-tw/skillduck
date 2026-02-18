@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Skills Dashboard",
+  "productName": "SkillDuck",
   "version": "0.1.0",
-  "identifier": "com.skills.dashboard",
+  "identifier": "com.skillduck.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Skills Dashboard",
+        "title": "SkillDuck",
         "width": 1200,
         "height": 800,
         "minWidth": 900,
