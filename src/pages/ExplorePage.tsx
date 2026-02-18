@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useStore } from "@/hooks/useStore";
-import { cliAddSkill, searchSkills, type SkillSearchResult } from "@/lib/tauri";
+import { searchSkills, type SkillSearchResult } from "@/lib/tauri";
+import { AddSkillDialog } from "@/components/skills/AddSkillDialog";
 import {
   Search,
   Download,
@@ -11,14 +11,11 @@ import {
 } from "lucide-react";
 
 export function ExplorePage() {
-  const appendCliOutput = useStore((s) => s.appendCliOutput);
-  const setIsLoading = useStore((s) => s.setIsLoading);
-
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<SkillSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [installing, setInstalling] = useState<string | null>(null);
+  const [installTarget, setInstallTarget] = useState<SkillSearchResult | null>(null);
 
   // Debounced search effect
   useEffect(() => {
@@ -51,29 +48,6 @@ export function ExplorePage() {
     }
   };
 
-  const handleInstall = async (skill: SkillSearchResult) => {
-    setInstalling(skill.skillId);
-    setIsLoading(true);
-    try {
-      const result = await cliAddSkill({
-        source: skill.source,
-        agents: [],
-        skills: [skill.skillId],
-        global: false,
-        listOnly: false,
-        all: false,
-      });
-      appendCliOutput(result.stdout);
-      if (result.stderr) appendCliOutput(result.stderr);
-      appendCliOutput(`Successfully installed ${skill.name}`);
-    } catch (err) {
-      appendCliOutput(`Error installing ${skill.name}: ${err}`);
-    } finally {
-      setInstalling(null);
-      setIsLoading(false);
-    }
-  };
-
   const handleRetry = () => {
     if (search.trim().length >= 2) {
       handleSearch(search.trim());
@@ -81,6 +55,7 @@ export function ExplorePage() {
   };
 
   return (
+    <>
     <div className="h-full overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
@@ -148,15 +123,10 @@ export function ExplorePage() {
                 </p>
                 <div className="mt-3 flex items-center gap-2">
                   <button
-                    onClick={() => handleInstall(skill)}
-                    disabled={installing === skill.skillId}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    onClick={() => setInstallTarget(skill)}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
-                    {installing === skill.skillId ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Download className="h-3 w-3" />
-                    )}
+                    <Download className="h-3 w-3" />
                     Install
                   </button>
                   <a
@@ -200,5 +170,12 @@ export function ExplorePage() {
         )}
       </div>
     </div>
+    <AddSkillDialog
+      open={installTarget !== null}
+      onClose={() => setInstallTarget(null)}
+      initialSource={installTarget?.source ?? ""}
+      initialSkillNames={installTarget?.skillId ?? ""}
+    />
+    </>
   );
 }
