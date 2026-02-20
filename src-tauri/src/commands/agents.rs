@@ -184,6 +184,10 @@ fn detect_agent_presence(home: &PathBuf, agent: &AgentDefinition) -> bool {
         "goose" => vec![home.join(".config/goose")],
         "trae" => vec![home.join(".trae")],
         "augment" => vec![home.join(".augment")],
+        "kilo" => vec![home.join(".kilocode")],
+        "junie" => vec![home.join(".junie")],
+        "openhands" => vec![home.join(".openhands")],
+        "zencoder" => vec![home.join(".zencoder")],
         _ => vec![],
     };
 
