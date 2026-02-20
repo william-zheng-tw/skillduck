@@ -50,7 +50,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVFQkE5Q0UxRDVBNTFDQzkKUldUSkhLWFY0Wnk2N2tRQ1NUTDkycW5YU0J2T3hHMVZBa3JEVnd2dXpEQzQ0TUZscnNNemQwTnkK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEwOTcwNDgxN0M2Rjc2QjQKUldTMGRtOThnUVNYRU5hcUk1aXFIT1l3cG82eEQ3dHpKVU9tN0ZQQ0wzOU5QMTZwRGZFL29mSFEK",
       "endpoints": ["https://github.com/william-zheng-tw/skillduck/releases/latest/download/latest.json"]
     }
   },
