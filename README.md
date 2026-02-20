@@ -58,12 +58,44 @@ Built on [vercel-labs/skills](https://github.com/vercel-labs/skills) CLI with a 
 
 ## Installation
 
-Download the latest DMG from [Releases](https://github.com/william-zheng-tw/skillduck/releases) and drag SkillDuck to your Applications folder.
+**Requires macOS with Apple Silicon (M1/M2/M3/M4)**
 
-> **macOS note:** Since the app is not yet notarized, macOS may show "SkillDuck is damaged and can't be opened." Run this command to fix it:
-> ```bash
-> xattr -dr com.apple.quarantine /Applications/SkillDuck.app
-> ```
+### One-line install (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/william-zheng-tw/skillduck/main/install.sh | bash
+```
+
+**What this script does:**
+1. Downloads the latest SkillDuck DMG from GitHub Releases
+2. Copies `SkillDuck.app` to `/Applications`
+3. Runs `xattr -dr com.apple.quarantine /Applications/SkillDuck.app`
+4. Cleans up the temporary DMG file
+
+**About step 3 — the quarantine removal:**
+
+macOS automatically marks any file downloaded from the internet with a quarantine attribute. For apps that are not notarized with Apple, this causes macOS to block the app with an "app is damaged" error.
+
+`xattr -dr com.apple.quarantine` removes only that quarantine flag — it does not disable Gatekeeper, modify system settings, or grant any additional permissions to the app. The app still runs in the standard macOS sandbox.
+
+SkillDuck is not yet notarized because it requires an Apple Developer account ($99/year). You can [review the full install script](https://github.com/william-zheng-tw/skillduck/blob/main/install.sh) before running it.
+
+### Manual install
+
+1. Download the DMG from [Releases](https://github.com/william-zheng-tw/skillduck/releases)
+2. Open the DMG and drag **SkillDuck.app** to `/Applications`
+3. Remove the quarantine attribute:
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/SkillDuck.app
+   ```
+
+## Uninstall
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/william-zheng-tw/skillduck/main/uninstall.sh | bash
+```
+
+Removes `SkillDuck.app` from `/Applications` and cleans up app data. Will prompt for confirmation before deleting anything.
 
 ## Development
 
