@@ -50,12 +50,18 @@ jobs:
           REPO="${GITHUB_REPOSITORY}"
           BASE_URL="https://github.com/${REPO}/releases/download/${GITHUB_REF_NAME}"
           DMG_NAME="SkillDuck_${VERSION}_aarch64.dmg"
-          SIG_NAME="${DMG_NAME}.sig"
 
-          # Download the .sig file that tauri-action uploaded to the release
-          gh release download "${GITHUB_REF_NAME}" --pattern "${SIG_NAME}" --output signature.sig
-          SIGNATURE=$(cat signature.sig)
+          # Find .sig file produced by tauri build
+          SIG_FILE=$(find src-tauri/target -name "*.dmg.sig" | head -1)
+          echo "Found sig file: ${SIG_FILE}"
 
+          if [ -z "$SIG_FILE" ]; then
+            echo "ERROR: No .sig file found. Listing target bundle dirs:"
+            find src-tauri/target -name "*.sig" || true
+            exit 1
+          fi
+
+          SIGNATURE=$(cat "$SIG_FILE")
           PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           RELEASE_NOTES=$(gh release view "${GITHUB_REF_NAME}" --json body -q .body 2>/dev/null || echo "")
 
