@@ -50,17 +50,13 @@ jobs:
           REPO="${GITHUB_REPOSITORY}"
           BASE_URL="https://github.com/${REPO}/releases/download/${GITHUB_REF_NAME}"
           DMG_NAME="SkillDuck_${VERSION}_aarch64.dmg"
-          SIG_FILE="src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/${DMG_NAME}.sig"
+          SIG_NAME="${DMG_NAME}.sig"
 
-          if [ ! -f "$SIG_FILE" ]; then
-            # Try alternate bundle output path
-            SIG_FILE=$(find src-tauri/target -name "${DMG_NAME}.sig" | head -1)
-          fi
+          # Download the .sig file that tauri-action uploaded to the release
+          gh release download "${GITHUB_REF_NAME}" --pattern "${SIG_NAME}" --output signature.sig
+          SIGNATURE=$(cat signature.sig)
 
-          SIGNATURE=$(cat "$SIG_FILE")
           PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          # Fetch release notes from the GitHub release
           RELEASE_NOTES=$(gh release view "${GITHUB_REF_NAME}" --json body -q .body 2>/dev/null || echo "")
 
           cat > latest.json <<EOF
