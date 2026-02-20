@@ -56,6 +56,15 @@ Built on [vercel-labs/skills](https://github.com/vercel-labs/skills) CLI with a 
 - [Rust](https://rustup.rs/) (stable toolchain)
 - System WebView (built-in on macOS/Windows, WebKitGTK on Linux)
 
+## Installation
+
+Download the latest DMG from [Releases](https://github.com/william-zheng-tw/skillduck/releases) and drag SkillDuck to your Applications folder.
+
+> **macOS note:** Since the app is not yet notarized, macOS may show "SkillDuck is damaged and can't be opened." Run this command to fix it:
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/SkillDuck.app
+> ```
+
 ## Development
 
 ```bash

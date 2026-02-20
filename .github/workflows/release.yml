@@ -42,41 +42,4 @@ jobs:
           prerelease: false
           args: --target aarch64-apple-darwin
 
-      - name: Generate latest.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          REPO="${GITHUB_REPOSITORY}"
-          BASE_URL="https://github.com/${REPO}/releases/download/${GITHUB_REF_NAME}"
-          DMG_NAME="SkillDuck_${VERSION}_aarch64.dmg"
-
-          # Find .sig file produced by tauri build
-          SIG_FILE=$(find src-tauri/target -name "*.dmg.sig" | head -1)
-          echo "Found sig file: ${SIG_FILE}"
-
-          if [ -z "$SIG_FILE" ]; then
-            echo "ERROR: No .sig file found. Listing target bundle dirs:"
-            find src-tauri/target -name "*.sig" || true
-            exit 1
-          fi
-
-          SIGNATURE=$(cat "$SIG_FILE")
-          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          RELEASE_NOTES=$(gh release view "${GITHUB_REF_NAME}" --json body -q .body 2>/dev/null || echo "")
-
-          cat > latest.json <<EOF
-          {
-            "version": "${VERSION}",
-            "notes": "${RELEASE_NOTES}",
-            "pub_date": "${PUB_DATE}",
-            "platforms": {
-              "darwin-aarch64": {
-                "signature": "${SIGNATURE}",
-                "url": "${BASE_URL}/${DMG_NAME}"
-              }
-            }
-          }
-          EOF
-
-          gh release upload "${GITHUB_REF_NAME}" latest.json --clobber
+      # latest.json generation will be added when Apple notarization is set up
