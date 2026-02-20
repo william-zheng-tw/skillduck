@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Skill, AgentInfo, UpdateInfo } from "@/types/skills";
+import type { AppUpdateInfo } from "@/lib/tauri";
 import { detectAgents } from "@/lib/tauri";
 
 interface AppState {
@@ -35,6 +36,12 @@ interface AppState {
   setUpdatingSkills: (v: boolean) => void;
   dismissNoScanRootsAlert: boolean;
   setDismissNoScanRootsAlert: (v: boolean) => void;
+  appUpdate: AppUpdateInfo | null;
+  appUpdateChecking: boolean;
+  appUpdateInstalling: boolean;
+  setAppUpdate: (update: AppUpdateInfo | null) => void;
+  setAppUpdateChecking: (v: boolean) => void;
+  setAppUpdateInstalling: (v: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -71,6 +78,12 @@ export const useStore = create<AppState>()(
       setUpdatingSkills: (v) => set({ updatingSkills: v }),
       dismissNoScanRootsAlert: false,
       setDismissNoScanRootsAlert: (v) => set({ dismissNoScanRootsAlert: v }),
+      appUpdate: null,
+      appUpdateChecking: false,
+      appUpdateInstalling: false,
+      setAppUpdate: (update) => set({ appUpdate: update }),
+      setAppUpdateChecking: (v) => set({ appUpdateChecking: v }),
+      setAppUpdateInstalling: (v) => set({ appUpdateInstalling: v }),
       initGlobalAgents: async () => {
         try {
           const result = await detectAgents([]);

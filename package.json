@@ -1,7 +1,12 @@
 {
   "name": "skillduck",
-  "private": true,
   "version": "0.1.0",
+  "description": "A desktop GUI for managing Agent Skills — the open format for reusable AI agent capabilities.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/william-zheng-tw/skillduck.git"
+  },
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

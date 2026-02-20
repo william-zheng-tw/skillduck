@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Build and publish Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "SkillDuck ${{ github.ref_name }}"
+          releaseBody: "See the release notes below."
+          releaseDraft: false
+          prerelease: false
+          args: --target aarch64-apple-darwin
+
+      - name: Generate latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          REPO="${GITHUB_REPOSITORY}"
+          BASE_URL="https://github.com/${REPO}/releases/download/${GITHUB_REF_NAME}"
+          DMG_NAME="SkillDuck_${VERSION}_aarch64.dmg"
+          SIG_FILE="src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/${DMG_NAME}.sig"
+
+          if [ ! -f "$SIG_FILE" ]; then
+            # Try alternate bundle output path
+            SIG_FILE=$(find src-tauri/target -name "${DMG_NAME}.sig" | head -1)
+          fi
+
+          SIGNATURE=$(cat "$SIG_FILE")
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Fetch release notes from the GitHub release
+          RELEASE_NOTES=$(gh release view "${GITHUB_REF_NAME}" --json body -q .body 2>/dev/null || echo "")
+
+          cat > latest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "notes": "${RELEASE_NOTES}",
+            "pub_date": "${PUB_DATE}",
+            "platforms": {
+              "darwin-aarch64": {
+                "signature": "${SIGNATURE}",
+                "url": "${BASE_URL}/${DMG_NAME}"
+              }
+            }
+          }
+          EOF
+
+          gh release upload "${GITHUB_REF_NAME}" latest.json --clobber

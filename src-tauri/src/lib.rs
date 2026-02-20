@@ -7,6 +7,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             // Skills
             commands::skills::list_skills,
@@ -37,6 +38,9 @@ pub fn run() {
             // Settings
             commands::settings::get_settings,
             commands::settings::save_settings,
+            // Updater
+            commands::updater::check_for_app_update,
+            commands::updater::install_app_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

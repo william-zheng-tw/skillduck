@@ -5,3 +5,4 @@ pub mod cli_bridge;
 pub mod sandbox;
 pub mod watcher;
 pub mod settings;
+pub mod updater;

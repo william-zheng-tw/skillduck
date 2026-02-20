@@ -142,6 +142,22 @@ export function onCliOutput(callback: (line: string) => void): Promise<UnlistenF
   });
 }
 
+// === App Updater ===
+
+export interface AppUpdateInfo {
+  version: string;
+  body: string | null;
+  date: string | null;
+}
+
+export async function checkForAppUpdate(): Promise<AppUpdateInfo | null> {
+  return invoke<AppUpdateInfo | null>("check_for_app_update");
+}
+
+export async function installAppUpdate(): Promise<void> {
+  return invoke<void>("install_app_update");
+}
+
 // === Skills.sh Search API ===
 
 export interface SkillSearchResult {
