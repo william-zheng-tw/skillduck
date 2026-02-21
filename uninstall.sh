@@ -6,7 +6,6 @@ APP_PATH="/Applications/${APP_NAME}.app"
 
 TARGETS=(
   "${HOME}/.skillduck"
-  "${HOME}/.skills_dashboard"
   "${HOME}/Library/Application Support/com.skillduck.app"
   "${HOME}/Library/Application Support/skillduck"
   "${HOME}/Library/Application Support/com.skills.dashboard"
