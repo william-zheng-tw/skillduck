@@ -1,6 +1,6 @@
 {
   "name": "skillduck",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A desktop GUI for managing Agent Skills — the open format for reusable AI agent capabilities.",
   "repository": {
     "type": "git",
