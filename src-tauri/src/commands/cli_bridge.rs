@@ -12,12 +12,90 @@ pub struct CliOutput {
 }
 
 fn find_npx() -> String {
-    // Try common npx locations
-    if let Ok(output) = std::process::Command::new("which").arg("npx").output() {
-        if output.status.success() {
-            return String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let home = std::env::var("HOME").unwrap_or_default();
+
+    // 1. Check common fixed paths
+    let fixed_candidates = [
+        "/opt/homebrew/bin/npx",
+        "/usr/local/bin/npx",
+    ];
+    for candidate in &fixed_candidates {
+        if std::path::Path::new(candidate).exists() {
+            return candidate.to_string();
         }
     }
+
+    // 2. Scan ~/.nvm/versions/node/*/bin/npx — pick the latest version
+    if !home.is_empty() {
+        let nvm_versions = std::path::Path::new(&home).join(".nvm/versions/node");
+        if nvm_versions.exists() {
+            if let Ok(entries) = std::fs::read_dir(&nvm_versions) {
+                let mut versions: Vec<_> = entries.filter_map(|e| e.ok()).collect();
+                // Sort descending so we try the newest version first
+                versions.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
+                for entry in versions {
+                    let npx = entry.path().join("bin/npx");
+                    if npx.exists() {
+                        return npx.to_string_lossy().to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Scan ~/.fnm/node-versions/*/installation/bin/npx
+    if !home.is_empty() {
+        let fnm_versions = std::path::Path::new(&home).join(".fnm/node-versions");
+        if fnm_versions.exists() {
+            if let Ok(entries) = std::fs::read_dir(&fnm_versions) {
+                let mut versions: Vec<_> = entries.filter_map(|e| e.ok()).collect();
+                versions.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
+                for entry in versions {
+                    let npx = entry.path().join("installation/bin/npx");
+                    if npx.exists() {
+                        return npx.to_string_lossy().to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Try `which` with extended PATH
+    let mut extended_path = std::env::var("PATH").unwrap_or_default();
+    for extra in &["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"] {
+        if !extended_path.split(':').any(|p| p == *extra) {
+            extended_path = format!("{}:{}", extended_path, extra);
+        }
+    }
+    if let Ok(output) = std::process::Command::new("which")
+        .arg("npx")
+        .env("PATH", &extended_path)
+        .output()
+    {
+        if output.status.success() {
+            let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !path.is_empty() {
+                return path;
+            }
+        }
+    }
+
+    // 5. Try login shells (zsh first for macOS, then sh)
+    for shell in &["zsh", "bash", "sh"] {
+        if let Ok(output) = std::process::Command::new(shell)
+            .args(["-lc", "which npx 2>/dev/null || command -v npx 2>/dev/null"])
+            .output()
+        {
+            if output.status.success() {
+                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                // Take only the first line in case of shell startup messages
+                if let Some(first_line) = path.lines().find(|l| l.contains("/npx")) {
+                    return first_line.to_string();
+                }
+            }
+        }
+    }
+
     "npx".to_string()
 }
 
@@ -37,10 +115,22 @@ async fn run_skills_command(args: Vec<String>, cwd: Option<String>) -> Result<Cl
         }
     }
 
-    // Inherit PATH so npx/node can be found
-    if let Ok(path) = std::env::var("PATH") {
-        cmd.env("PATH", path);
+    // Build a rich PATH so node can be found by npx even in packaged app environments.
+    // Include the directory of the resolved npx binary so node is available alongside it.
+    let mut path_val = std::env::var("PATH").unwrap_or_default();
+    let npx_dir = std::path::Path::new(&npx).parent().map(|p| p.to_string_lossy().to_string());
+    let extras: &[&str] = &["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"];
+    for extra in extras {
+        if !path_val.split(':').any(|p| p == *extra) {
+            path_val = format!("{}:{}", path_val, extra);
+        }
     }
+    if let Some(dir) = npx_dir {
+        if !path_val.split(':').any(|p| p == dir) {
+            path_val = format!("{}:{}", dir, path_val);
+        }
+    }
+    cmd.env("PATH", path_val);
 
     let output = cmd
         .stdout(Stdio::piped())
@@ -136,9 +226,13 @@ pub async fn cli_init_skill(name: String, path: String) -> Result<CliOutput, Str
     cmd.arg("skills").arg("init").arg(&name);
     cmd.current_dir(&path);
 
-    if let Ok(env_path) = std::env::var("PATH") {
-        cmd.env("PATH", env_path);
+    let mut env_path = std::env::var("PATH").unwrap_or_default();
+    for extra in &["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"] {
+        if !env_path.split(':').any(|p| p == *extra) {
+            env_path = format!("{}:{}", env_path, extra);
+        }
     }
+    cmd.env("PATH", env_path);
 
     let output = cmd
         .stdout(Stdio::piped())
