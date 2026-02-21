@@ -113,7 +113,7 @@ npm run tauri build
 ## Architecture
 
 ```
-skills_dashboard/
+skillduck/
 ├── src/                      # Frontend (React)
 │   ├── components/
 │   │   ├── layout/           # Shell, Sidebar, StatusBar
