@@ -29,6 +29,12 @@ if [[ "$ARCH" != "arm64" ]]; then
   exit 1
 fi
 
+# Check npx (required at runtime)
+if ! command -v npx &>/dev/null; then
+  warn "npx not found in PATH. SkillDuck requires Node.js to run skills."
+  warn "Install Node.js via: https://nodejs.org or use nvm/fnm"
+fi
+
 info "Fetching latest SkillDuck release..."
 
 # Resolve latest version — try multiple strategies to avoid API rate limits
