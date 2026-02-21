@@ -72,12 +72,14 @@ export function useUpdates() {
       // Mark has_update on matching skills in store
       if (updates.length > 0) {
         const updatedNames = new Set(updates.map((u) => u.skillName));
+        const current = useStore.getState().skills;
         setSkills(
-          skills.map((s) => ({ ...s, has_update: updatedNames.has(s.name) }))
+          current.map((s) => ({ ...s, has_update: updatedNames.has(s.name) }))
         );
         appendCliOutput(`Found ${updates.length} skill(s) with updates available.`);
       } else {
-        setSkills(skills.map((s) => ({ ...s, has_update: false })));
+        const current = useStore.getState().skills;
+        setSkills(current.map((s) => ({ ...s, has_update: false })));
         appendCliOutput("All skills are up to date.");
       }
     } catch (err) {
@@ -116,7 +118,7 @@ export function useUpdates() {
       if (result.stderr) appendCliOutput(result.stderr);
       appendCliOutput(`Updated ${skillName}.`);
       // Remove from pending updates and refresh
-      setPendingUpdates(pendingUpdates.filter((u) => u.skillName !== skillName));
+      setPendingUpdates(useStore.getState().pendingUpdates.filter((u) => u.skillName !== skillName));
       const refreshed = await listSkills("all");
       setSkills(refreshed);
       onDone?.();
