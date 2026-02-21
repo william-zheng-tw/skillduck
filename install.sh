@@ -30,9 +30,32 @@ if [[ "$ARCH" != "arm64" ]]; then
 fi
 
 info "Fetching latest SkillDuck release..."
-VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-  | grep '"tag_name"' \
-  | sed 's/.*"v\([^"]*\)".*/\1/')
+
+# Resolve latest version — try multiple strategies to avoid API rate limits
+VERSION=""
+
+# 1. Use gh CLI if available (authenticated, no rate limit)
+if command -v gh &>/dev/null; then
+  VERSION=$(gh release view --repo "${REPO}" --json tagName -q '.tagName' 2>/dev/null | sed 's/^v//')
+fi
+
+# 2. Use GITHUB_TOKEN if set
+if [[ -z "$VERSION" && -n "${GITHUB_TOKEN}" ]]; then
+  VERSION=$(curl -fsSL \
+    -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/${REPO}/releases/latest" \
+    | grep '"tag_name"' \
+    | sed 's/.*"v\([^"]*\)".*/\1/')
+fi
+
+# 3. Follow the /releases/latest redirect to extract version from the URL
+if [[ -z "$VERSION" ]]; then
+  VERSION=$(curl -fsSI "https://github.com/${REPO}/releases/latest" \
+    | grep -i "^location:" \
+    | sed 's|.*/releases/tag/v||' \
+    | tr -d '[:space:]')
+fi
 
 if [[ -z "$VERSION" ]]; then
   error "Could not fetch latest version. Check your internet connection."
