@@ -1,9 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 APP_NAME="SkillDuck"
 APP_PATH="/Applications/${APP_NAME}.app"
-APP_DATA="${HOME}/Library/Application Support/com.skillduck.app"
+
+TARGETS=(
+  "${HOME}/.skillduck"
+  "${HOME}/.skills_dashboard"
+  "${HOME}/Library/Application Support/com.skillduck.app"
+  "${HOME}/Library/Application Support/skillduck"
+  "${HOME}/Library/Application Support/com.skills.dashboard"
+  "${HOME}/Library/Application Support/skills-dashboard"
+  "${HOME}/Library/Preferences/com.skillduck.app.plist"
+  "${HOME}/Library/Preferences/skillduck.plist"
+  "${HOME}/Library/Caches/com.skillduck.app"
+  "${HOME}/Library/Caches/skillduck"
+  "${HOME}/Library/WebKit/com.skillduck.app"
+  "${HOME}/Library/WebKit/skillduck"
+  "${HOME}/Library/WebKit/com.skills.dashboard"
+  "${HOME}/Library/WebKit/skills-dashboard"
+)
 
 # Colors
 BOLD="\033[1m"
@@ -12,7 +28,6 @@ YELLOW="\033[0;33m"
 RED="\033[0;31m"
 RESET="\033[0m"
 
-info()    { echo -e "${BOLD}$1${RESET}"; }
 success() { echo -e "${GREEN}✓ $1${RESET}"; }
 warn()    { echo -e "${YELLOW}⚠ $1${RESET}"; }
 
@@ -20,7 +35,9 @@ echo ""
 echo -e "${BOLD}SkillDuck Uninstaller${RESET}"
 echo "This will remove:"
 echo "  • ${APP_PATH}"
-echo "  • ${APP_DATA} (settings and app data)"
+for t in "${TARGETS[@]}"; do
+  echo "  • ${t}"
+done
 echo ""
 read -r -p "Continue? [y/N] " confirm
 if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -37,12 +54,12 @@ else
   warn "${APP_PATH} not found, skipping"
 fi
 
-if [[ -d "$APP_DATA" ]]; then
-  rm -rf "$APP_DATA"
-  success "Removed app data"
-else
-  warn "App data not found, skipping"
-fi
+for t in "${TARGETS[@]}"; do
+  if [[ -e "$t" ]]; then
+    rm -rf "$t"
+    success "Removed ${t}"
+  fi
+done
 
 echo ""
 echo -e "${BOLD}SkillDuck has been uninstalled.${RESET}"

@@ -17,7 +17,7 @@ impl Default for Settings {
 
 fn get_settings_path() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    let config_dir = home.join(".skills_dashboard");
+    let config_dir = home.join(".skillduck");
     fs::create_dir_all(&config_dir).map_err(|e| format!("Failed to create config dir: {}", e))?;
     Ok(config_dir.join("settings.json"))
 }
