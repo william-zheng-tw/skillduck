@@ -1,8 +1,30 @@
-# SkillDuck
+<div align="center">
+  <img src="docs/images/skillduck-banner.png" alt="SkillDuck" width="100%">
+
+  **The GUI for AI Agent Skills**
+
+  [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon-000?logo=apple)](https://github.com/william-zheng-tw/skillduck/releases)
+  [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB?logo=tauri)](https://tauri.app)
+  [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+  [![Latest Release](https://img.shields.io/github/v/release/william-zheng-tw/skillduck)](https://github.com/william-zheng-tw/skillduck/releases)
+</div>
 
 A desktop GUI for managing [Agent Skills](https://agentskills.io) — the open format for packaging reusable AI agent capabilities.
 
 Built on [vercel-labs/skills](https://github.com/vercel-labs/skills) CLI with a Tauri 2.0 + React 19 stack.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/images/skillduck-myskills-list-detail.png"><br><b>My Skills</b> — View and manage installed skills</td>
+    <td><img src="docs/images/skillduck-explore-list.png"><br><b>Explore</b> — Browse community skills</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/skillduck-install-skill.png"><br><b>Install</b> — One-click install to any agent</td>
+    <td><img src="docs/images/skillduck-agent-skill-detail.png"><br><b>Agent Skills</b> — Cross-agent management</td>
+  </tr>
+</table>
 
 ## Features
 
@@ -112,6 +134,9 @@ npm run tauri build
 
 ## Architecture
 
+<details>
+<summary>Project structure and CLI communication details</summary>
+
 ```
 skillduck/
 ├── src/                      # Frontend (React)
@@ -158,6 +183,8 @@ Scans these agent skill directories:
 | ... | ... | ... |
 
 See `src-tauri/src/commands/agents.rs` for the full list.
+
+</details>
 
 ## License
 
