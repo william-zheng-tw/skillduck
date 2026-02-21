@@ -8,16 +8,12 @@ TARGETS=(
   "${HOME}/.skillduck"
   "${HOME}/Library/Application Support/com.skillduck.app"
   "${HOME}/Library/Application Support/skillduck"
-  "${HOME}/Library/Application Support/com.skills.dashboard"
-  "${HOME}/Library/Application Support/skills-dashboard"
   "${HOME}/Library/Preferences/com.skillduck.app.plist"
   "${HOME}/Library/Preferences/skillduck.plist"
   "${HOME}/Library/Caches/com.skillduck.app"
   "${HOME}/Library/Caches/skillduck"
   "${HOME}/Library/WebKit/com.skillduck.app"
   "${HOME}/Library/WebKit/skillduck"
-  "${HOME}/Library/WebKit/com.skills.dashboard"
-  "${HOME}/Library/WebKit/skills-dashboard"
 )
 
 # Colors
