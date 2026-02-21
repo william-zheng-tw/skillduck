@@ -1,6 +1,6 @@
 [package]
 name = "skillduck"
-version = "0.1.2"
+version = "0.1.3"
 description = "SkillDuck - Visual GUI for vercel-labs/skills"
 authors = ["SkillDuck"]
 edition = "2021"
